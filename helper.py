@@ -38,7 +38,7 @@ def clean_all_files(filepaths, clean_func):
 
 
 
-DEFAULT_PAMAP2_FILEPATHS = ["./data/PAMAP2/subject101.dat","./data/PAMAP2/subject102.dat","./data/PAMAP2/subject103.dat","./data/PAMAP2/subject104.dat","./data/PAMAP2/PAMAP2/subject105.dat","./data/PAMAP2/subject106.dat","./data/PAMAP2/subject107.dat","./data/PAMAP2/subject108.dat","./data/PAMAP2/subject109.dat"]
+DEFAULT_PAMAP2_FILEPATHS = ["./data/PAMAP2/subject101.dat","./data/PAMAP2/subject102.dat","./data/PAMAP2/subject103.dat","./data/PAMAP2/subject104.dat","./data/PAMAP2/subject105.dat","./data/PAMAP2/subject106.dat","./data/PAMAP2/subject107.dat","./data/PAMAP2/subject108.dat","./data/PAMAP2/subject109.dat"]
 
 def load_table(filepaths = DEFAULT_PAMAP2_FILEPATHS, clean_func = clean_PAMAP2_dataset, save_file = "clean_PAMAP2.pkl", force_reload = False):
     # function to load a panda table from filepaths, clean each table using given clean_func, append them into one table and return it.

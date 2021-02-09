@@ -28,9 +28,10 @@ class Generator(nn.Module):
         
         
     def forward(self, x):
-        y = self.embedding(x.view(x.shape[0], -1, 1))
-        y = y.view(x.shape[0], 1, self.noise_len) + self.positional_embedding.to(y.device) # broadcasting on batch dimension
-        y = self.layer(y.view(y.shape[0], 1, self.noise_len))
-        y = self.fcn(y.view(x.shape[0], -1, 1))
-        y = y.view([x.shape[0]]+list(self.output_size))
+        batch_size = x.shape[0]
+        y = self.embedding(x.view(batch_size, -1, 1))
+        y = y.view(batch_size, 1, self.noise_len) + self.positional_embedding.to(y.device) # broadcasting on batch dimension
+        y = self.layer(y.view(batch_size, 1, self.noise_len))
+        y = self.fcn(y.view(batch_size, -1, 1))
+        y = y.view([batch_size]+list(self.output_size))
         return y

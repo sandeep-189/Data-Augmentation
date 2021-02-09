@@ -26,8 +26,9 @@ class Discriminator(nn.Module):
                                 )
         
     def forward(self, x):
-        y = self.embedding(x.view(x.shape[0], -1, 1))
-        y = y.view(x.shape[0], self.input_size[-2], self.input_size[-1]) + self.positional_embedding.to(y.device) # broadcasting on batch dimension
-        y = self.layer(y.view(x.shape[0], self.input_size[-2], self.input_size[-1]))
-        y = self.fcn(y.view(x.shape[0], -1, 1))
+        batch_size = x.shape[0]
+        y = self.embedding(x.view(batch_size, -1, 1))
+        y = y.view(batch_size, self.input_size[-2], self.input_size[-1]) + self.positional_embedding.to(y.device) # broadcasting on batch dimension
+        y = self.layer(y.view(batch_size, self.input_size[-2], self.input_size[-1]))
+        y = self.fcn(y.view(batch_size, -1, 1))
         return y
