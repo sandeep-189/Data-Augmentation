@@ -1,0 +1,4 @@
+Needs:
+torch
+pytorch-lightning
+numpy
