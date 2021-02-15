@@ -3,27 +3,13 @@ import os
 import numpy as np
 from torch.utils.data import random_split
 import torch
+import dataset
 
-DROP_COLUMNS = [2,3,7,8,9,16,17,18,19,20,24,25,26,33,34,35,36,37,41,42,43,50,51,52,53] # check indicies in link in function
+DEFAULT_RWHAR_FILEPATH = ["./data/RWHAR/"]
 
-def clean_PAMAP2_dataset(filepath, skip_col = DROP_COLUMNS):
-    # There are 54 columns in the dataset with 9 subjects who perform 24 different activities. We will select the pertinent data using
-    # skip_col to remove columns and remove absent data rows and non activity data. The cleaned set by default will have 29 columns
-    # See https://archive.ics.uci.edu/ml/machine-learning-databases/00231/readme.pdf for data info
+DEFAULT_PAMAP2_FILEPATHS = ["./data/PAMAP2/subject101.dat","./data/PAMAP2/subject102.dat","./data/PAMAP2/subject103.dat","./data/PAMAP2/subject104.dat","./data/PAMAP2/subject105.dat","./data/PAMAP2/subject106.dat","./data/PAMAP2/subject107.dat","./data/PAMAP2/subject108.dat","./data/PAMAP2/subject109.dat"]
 
-    columns = [x for x in range(54) if x not in skip_col]
-    # read from file reading only column numbers in columns variable
-    sub1 = pd.read_table(filepath, sep=" ", header = None, usecols = columns,)
-    
-     # as per the source, activity id 0 is used when the sensors are recording but no selected activity is being done by the subject
-    # as recommended, it is marked with NaN and later removed by dropna.
-    sub1 = sub1.where((sub1.iloc[:,1] > 0) & (sub1.iloc[:,1] < 8))
 
-    # remove any rows that have NaN 
-    sub1 = sub1.dropna()
-    
-    sub1 = sub1.astype("float64")
-    return sub1
 
 def clean_all_files(filepaths, clean_func): 
     # filespaths is a list of text files with panda tables stored in them.
@@ -36,11 +22,7 @@ def clean_all_files(filepaths, clean_func):
         total = total.append(table,ignore_index = True) # joins all data into one dataframe
     return total
 
-
-
-DEFAULT_PAMAP2_FILEPATHS = ["./data/PAMAP2/subject101.dat","./data/PAMAP2/subject102.dat","./data/PAMAP2/subject103.dat","./data/PAMAP2/subject104.dat","./data/PAMAP2/subject105.dat","./data/PAMAP2/subject106.dat","./data/PAMAP2/subject107.dat","./data/PAMAP2/subject108.dat","./data/PAMAP2/subject109.dat"]
-
-def load_table(filepaths = DEFAULT_PAMAP2_FILEPATHS, clean_func = clean_PAMAP2_dataset, save_file = "clean_PAMAP2.pkl", force_reload = False):
+def load_table(filepaths = DEFAULT_PAMAP2_FILEPATHS, clean_func = dataset.clean_PAMAP2_dataset, save_file = "clean_PAMAP2.pkl", force_reload = False):
     # function to load a panda table from filepaths, clean each table using given clean_func, append them into one table and return it.
     # the table is saved and reloaded when needed or when forced to reload it.
     
@@ -71,7 +53,7 @@ def load_PAMAP2_activity(activity_num = 0, force_reload = False):
     table = load_table(force_reload = force_reload)
     
     print("Keep only activity number ", activity_num)
-    table = table.where(table.iloc[:,1] == activity_num)
+    table = table.where(table.iloc[:,1] == activity_num) # every activity except activity_num becomes NA
     table = table.dropna()
     
     print("Windowing")
@@ -101,7 +83,7 @@ def load_PAMAP2_acc_activity(activity_num = 0, force_reload = False):
     table = table.iloc[:,:5] # do mean of acceleration
     
     print("Keep only activity number ", activity_num)
-    table = table.where(table.iloc[:,1] == activity_num)
+    table = table.where(table.iloc[:,1] == activity_num) # every activity except activity_num becomes NA
     table = table.dropna()
     
     print("Windowing")
@@ -109,8 +91,26 @@ def load_PAMAP2_acc_activity(activity_num = 0, force_reload = False):
     print("Done!")
     return data
 
-def clean_RWHAR(filepath):
-    pass
+def load_RWHAR(force_reload = False):
+    # helper function for one line loading with optimizations 
+    
+    sel_location = "forearm"
+    
+    table = load_table(filepaths = DEFAULT_RWHAR_FILEPATH,clean_func = dataset.clean_RWHAR, save_file = "clean_RWHAR.pkl", force_reload = force_reload)
+    print("Selecting location : ",sel_location)
+    table = table[table.location == dataset.RWHAR_BAND_LOCATION[sel_location]] # selecting location
+    table = table.drop(columns = "location") # drop the now unnecessary location column
+    table = table.dropna() # drop all entries which do not have complete information
+    
+    print("Windowing")
+    # Since each subject has different timestamps and the windowing function does not check the timestamps, we have to window each subject 
+    # separately and append them together
+    data =[]
+    for sub in table.subject.unique():
+        tmp = windowing(table[table.subject==sub], sampling_freq = 50, group_col_num = 7, data_columns = range(1,7))
+        data.extend(tmp)
+    print("Done!")
+    return data
 
 def windowing(df, time_window = 1, sampling_freq = 100, group_col_num = 1, data_columns = range(2,29)):
     # df is the cleaned dataframe from dataset. This function will break the different activities to "window"
