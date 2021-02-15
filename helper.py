@@ -70,6 +70,7 @@ def load_PAMAP2_acceleration(force_reload = False):
     table = table.iloc[:,:5]
     
     print("Windowing")
+    
     data = windowing(table, data_columns = range(2,5))
     print("Done!")
     return data
@@ -96,7 +97,12 @@ def load_RWHAR(force_reload = False):
     
     sel_location = "forearm"
     
-    table = load_table(filepaths = DEFAULT_RWHAR_FILEPATH,clean_func = dataset.clean_RWHAR, save_file = "clean_RWHAR.pkl", force_reload = force_reload)
+    table = load_table(filepaths = DEFAULT_RWHAR_FILEPATH,
+                       clean_func = dataset.clean_RWHAR, 
+                       subject_column = False, 
+                       save_file = "clean_RWHAR.pkl", 
+                       force_reload = force_reload
+                      )
     print("Selecting location : ",sel_location)
     table = table[table.location == dataset.RWHAR_BAND_LOCATION[sel_location]] # selecting location
     table = table.drop(columns = "location") # drop the now unnecessary location column
@@ -105,6 +111,7 @@ def load_RWHAR(force_reload = False):
     print("Windowing")
     # Since each subject has different timestamps and the windowing function does not check the timestamps, we have to window each subject 
     # separately and append them together
+    
     data =[]
     for sub in table.subject.unique():
         tmp = windowing(table[table.subject==sub], sampling_freq = 50, group_col_num = 7, data_columns = range(1,7))
@@ -116,6 +123,8 @@ def windowing(df, time_window = 1, sampling_freq = 100, group_col_num = 1, data_
     # df is the cleaned dataframe from dataset. This function will break the different activities to "window"
     # seconds of grouped data using group_col_num as the activities column with sampling frequency determining number of  
     # samples in each second. If the window cannot be filled by same activity data from subject, it will be dropped.
+    # Note: we assume that the timestamps are close by since the activities are done for a continuous period of time. 
+    #       when the activity changes, only then is there a jump in timestamp. The table should be fed subject by subject
     
     event_window = time_window * sampling_freq # number of events in one window
     output_shape = (len(data_columns), event_window)
