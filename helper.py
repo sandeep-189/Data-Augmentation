@@ -99,7 +99,6 @@ def load_RWHAR(force_reload = False):
     
     table = load_table(filepaths = DEFAULT_RWHAR_FILEPATH,
                        clean_func = dataset.clean_RWHAR, 
-                       subject_column = False, 
                        save_file = "clean_RWHAR.pkl", 
                        force_reload = force_reload
                       )
@@ -114,7 +113,7 @@ def load_RWHAR(force_reload = False):
     
     data =[]
     for sub in table.subject.unique():
-        tmp = windowing(table[table.subject==sub], sampling_freq = 50, group_col_num = 7, data_columns = range(1,7))
+        tmp = windowing(table[table.subject==sub], sampling_freq = 50, group_col_num = 6, data_columns = range(0,6))
         data.extend(tmp)
     print("Done!")
     return data
@@ -163,7 +162,12 @@ def dist(dataset, num_classes):
     
     weight = np.zeros((num_classes,1))
     for data in dataset:
-        weight[data["label"].item()] += 1
+        try:
+            weight[data["label"].item()] += 1
+        except:
+            print(data)
+            raise Exception("Error")
+            
     weight /= len(dataset)
     return weight
 

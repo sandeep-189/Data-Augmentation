@@ -20,8 +20,12 @@ def init_weights(m):
     
 class GAN(pl.LightningModule):
     
-    def __init__(self, val_model, generator, discriminator, noise_len, val_expected_output, init_weight = True):
+    def __init__(self, val_model, generator, discriminator, noise_len, val_expected_output, 
+                 init_weight = True, decay = 1, dis_lr = 0.0002, gen_lr = 0.0002):
         super(GAN, self).__init__()
+        self.dis_lr = dis_lr
+        self.gen_lr = gen_lr
+        self.decay = decay
         self.noise_len = noise_len
         self.criterion = nn.BCELoss()
         self.generator = generator
@@ -63,7 +67,7 @@ class GAN(pl.LightningModule):
         batch_size = batch.shape[0]
         
         # Train discriminator with real images
-        label = self.gen_randn(batch_size, value = 1, decay = 1) # 1 is real label. It gives a noisy label 
+        label = self.gen_randn(batch_size, value = 1, decay = self.decay) # 1 is real label. It gives a noisy label 
         output = self(batch).view(-1)
         D_x = output.mean().item()
         self.log("D(x)", D_x, on_step = False, on_epoch = True, prog_bar = False, logger = True)
@@ -126,6 +130,6 @@ class GAN(pl.LightningModule):
         return val_loss
     
     def configure_optimizers(self):
-        optiG = torch.optim.Adam(self.generator.parameters(), lr = 0.0002, betas = (0.5, 0.999))
-        optiD = torch.optim.Adam(self.discriminator.parameters(), lr = 0.0002, betas = (0.5, 0.999))
+        optiG = torch.optim.Adam(self.generator.parameters(), lr = self.gen_lr, betas = (0.5, 0.999))
+        optiD = torch.optim.Adam(self.discriminator.parameters(), lr = self.dis_lr, betas = (0.5, 0.999))
         return (optiG, optiD)

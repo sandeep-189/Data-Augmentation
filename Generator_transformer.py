@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 import helper
+from EncodeLayer import EncodeLayer
 
 class Generator(nn.Module):
     
@@ -15,10 +16,17 @@ class Generator(nn.Module):
         
         self.positional_embedding = helper.generate_pe(1, noise_len, period = period)
         
+#         self.layer = nn.Sequential(
+#             nn.TransformerEncoderLayer(d_model = noise_len, nhead = nheads, dim_feedforward = dim_feedforward, dropout = 0.5, activation = "relu"),
+#             nn.Conv1d(1, 10, 1),
+#             nn.TransformerEncoderLayer(d_model = noise_len, nhead = nheads, dim_feedforward = dim_feedforward, dropout = 0.5, activation = "relu"),
+#             nn.Conv1d(10, 1, 1),
+#         )
+        
         self.layer = nn.Sequential(
-            nn.TransformerEncoderLayer(d_model = noise_len, nhead = nheads, dim_feedforward = dim_feedforward, dropout = 0.5, activation = "relu"),
+            EncodeLayer(d_model = noise_len, nhead = nheads, dim_feedforward = dim_feedforward, dropout = 0.5),
             nn.Conv1d(1, 10, 1),
-            nn.TransformerEncoderLayer(d_model = noise_len, nhead = nheads, dim_feedforward = dim_feedforward, dropout = 0.5, activation = "relu"),
+            EncodeLayer(d_model = noise_len, nhead = nheads, dim_feedforward = dim_feedforward, dropout = 0.5),
             nn.Conv1d(10, 1, 1),
         )
         

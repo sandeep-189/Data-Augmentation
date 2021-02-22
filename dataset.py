@@ -124,7 +124,7 @@ def clean_RWHAR(filepath):
     for sub in subject_dir:
         if "proband" not in sub:
             continue
-        files = os.listdir(filepath+sub)
+#         files = os.listdir(filepath+sub)
 #         files = [file for file in files if (("acc" in file or "gyr" in file) and "csv" in file)]
         subject_num = int(sub[7:]) # proband is 7 letters long so subject num is number following that
         sub_pd = pd.DataFrame()
@@ -141,5 +141,6 @@ def clean_RWHAR(filepath):
             
         sub_pd["subject"] = subject_num # add subject id to all entries
         dataset = dataset.append(sub_pd)
+    
     
     return dataset

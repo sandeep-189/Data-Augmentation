@@ -1,4 +1,7 @@
 import pytorch_lightning as pl
+from pytorch_lightning.metrics.functional.classification import f1_score
+import torch
+import torch.nn as nn
 
 class Net(pl.LightningModule):
     def __init__(self, model, classes_weight = None):
