@@ -22,10 +22,11 @@ class F1_score_check(EarlyStopping):
 
         if trainer.use_tpu and TPU_AVAILABLE:
             current = current.cpu()
-            
-        if current >= self.threshold_value:
+        
+        should_stop = current >= self.threshold_value
+        if bool(should_stop):
             self.stopped_epoch = trainer.current_epoch
             trainer.should_stop = True
             
-        should_stop = trainer.accelerator_backend.early_stopping_should_stop(pl_module)
+        should_stop = trainer.training_type_plugin.reduce_early_stopping_decision(should_stop)
         trainer.should_stop = should_stop

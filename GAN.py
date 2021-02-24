@@ -3,7 +3,7 @@ import torch.nn as nn
 import pytorch_lightning as pl
 import numpy as np
 import random
-from pytorch_lightning.metrics.functional.classification import f1_score
+from pytorch_lightning.metrics.functional import f1
 
 # Set random seed for reproducibility
 # manualSeed = 3942 # 7595 # 6161 # 8037
@@ -20,7 +20,7 @@ def init_weights(m):
     
 class GAN(pl.LightningModule):
     
-    def __init__(self, val_model, generator, discriminator, noise_len, val_expected_output, 
+    def __init__(self, val_model, generator, discriminator, noise_len, val_expected_output, num_classes, 
                  init_weight = True, decay = 1, dis_lr = 0.0002, gen_lr = 0.0002):
         super(GAN, self).__init__()
         self.dis_lr = dis_lr
@@ -31,6 +31,7 @@ class GAN(pl.LightningModule):
         self.generator = generator
         self.discriminator = discriminator
         self.val_model = val_model
+        self.num_classes = num_classes
         self.val_expected_output = val_expected_output
         
         # init weights
@@ -126,7 +127,7 @@ class GAN(pl.LightningModule):
         label = torch.full((batch.shape[0],), self.val_expected_output, dtype = torch.long, device = self.device)
         val_loss = nn.CrossEntropyLoss()(fake_outputs, label)
         self.log("val_loss", val_loss, on_step = False, on_epoch = True, prog_bar = False, logger = True)
-        self.log('val_f1_score', f1_score(fake_outputs, label, class_reduction = "micro"), on_step = False, on_epoch = True, prog_bar = True, logger = True)    
+        self.log('val_f1_score', f1(fake_outputs, label, num_classes = self.num_classes, average = "micro"), on_step = False, on_epoch = True, prog_bar = True, logger = True)    
         return val_loss
     
     def configure_optimizers(self):
