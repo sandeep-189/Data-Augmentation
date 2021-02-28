@@ -61,37 +61,6 @@ def load_PAMAP2_activity(activity_num = 0, force_reload = False):
     print("Done!")
     return data
 
-def load_PAMAP2_acceleration(force_reload = False):
-    # helper function to load only the 1st IMU 3d acceleration from PAMAP2 table. This was done to get a simple dataset for quick testing
-    
-    table = load_table(force_reload = force_reload)
-        
-    print("Keep only acceleration")
-    table = table.iloc[:,:5]
-    
-    print("Windowing")
-    
-    data = windowing(table, data_columns = range(2,5))
-    print("Done!")
-    return data
-
-def load_PAMAP2_acc_activity(activity_num = 0, force_reload = False):
-    # helper function to load only one activty and the 1st IMU 3d acceleration from PAMAP2 table. This was done to get a simple dataset for quick testing
-    
-    table = load_table(force_reload = force_reload)
-    
-    print("Keep only acceleration")
-    table = table.iloc[:,:5] # do mean of acceleration
-    
-    print("Keep only activity number ", activity_num)
-    table = table.where(table.iloc[:,1] == activity_num) # every activity except activity_num becomes NA
-    table = table.dropna()
-    
-    print("Windowing")
-    data = windowing(table, data_columns = range(2,5))
-    print("Done!")
-    return data
-
 def load_RWHAR(sel_location = "forearm", force_reload = False):
     # helper function for one line loading with optimizations 
     
