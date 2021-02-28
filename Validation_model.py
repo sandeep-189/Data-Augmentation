@@ -4,11 +4,11 @@ import torch
 import torch.nn as nn
 
 class Net(pl.LightningModule):
-    def __init__(self, model, num_classes, classes_weight = None, lr = 0.0001):
+    def __init__(self, model, num_classes, classes_weight = None, lr = 0.0001, monitor = "val_f1_score"):
         super(Net,self).__init__()
         self.model = model
-        self.optimizer = optimizer
         self.lr = lr
+        self.monitor = monitor
         self.num_classes = num_classes
         self.criterion = nn.CrossEntropyLoss(weight = classes_weight);
         
@@ -17,8 +17,12 @@ class Net(pl.LightningModule):
     
     def configure_optimizers(self):
         optimizer = torch.optim.Adamax(self.parameters(), lr=self.lr)
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, "min", patience = 3, verbose = True)
-        return , torch.
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, "max", patience = 3, verbose = True)
+        return {
+            "optimizer":optimizer,
+            "scheduler":scheduler,
+            "monitor":self.monitor,
+               }
     
     def training_step(self, batch, batch_idx):
         y_pred = self(batch["data"])

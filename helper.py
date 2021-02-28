@@ -92,10 +92,8 @@ def load_PAMAP2_acc_activity(activity_num = 0, force_reload = False):
     print("Done!")
     return data
 
-def load_RWHAR(force_reload = False):
+def load_RWHAR(sel_location = "forearm", force_reload = False):
     # helper function for one line loading with optimizations 
-    
-    sel_location = "forearm"
     
     table = load_table(filepaths = DEFAULT_RWHAR_FILEPATH,
                        clean_func = dataset.clean_RWHAR, 
