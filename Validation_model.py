@@ -37,3 +37,10 @@ class Net(pl.LightningModule):
         self.log('val_loss', loss, on_step = False, on_epoch = True, prog_bar = False, logger = True)
         self.log('val_f1_score', f1(y_pred, batch["label"], num_classes = self.num_classes, average = "micro"), on_step = False, on_epoch = True, prog_bar = True, logger = True)
         return loss
+    
+    @staticmethod
+    def add_model_args(parent_parser):
+        parser = ArgumentParser(parents=[parent_parser], add_help=False)
+        parser.add_argument('--lr',type = float,default = 0.0001)
+        parser.add_argument('--monitor',type = str,default = "val_f1_score")
+        return parser

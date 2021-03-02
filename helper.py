@@ -61,7 +61,7 @@ def load_PAMAP2_activity(activity_num = 0, force_reload = False):
     print("Done!")
     return data
 
-def load_RWHAR(sel_location = "forearm", force_reload = False):
+def load_RWHAR(sel_location = "chest", force_reload = False):
     # helper function for one line loading with optimizations 
     
     table = load_table(filepaths = DEFAULT_RWHAR_FILEPATH,
@@ -72,6 +72,31 @@ def load_RWHAR(sel_location = "forearm", force_reload = False):
     print("Selecting location : ",sel_location)
     table = table[table.location == dataset.RWHAR_BAND_LOCATION[sel_location]] # selecting location
     table = table.drop(columns = "location") # drop the now unnecessary location column
+    table = table.dropna() # drop all entries which do not have complete information
+    
+    print("Windowing")
+    # Since each subject has different timestamps and the windowing function does not check the timestamps, we have to window each subject 
+    # separately and append them together
+    
+    data =[]
+    for sub in table.subject.unique():
+        tmp = windowing(table[table.subject==sub], sampling_freq = 50, group_col_num = 6, data_columns = range(0,6))
+        data.extend(tmp)
+    print("Done!")
+    return data
+
+def load_RWHAR_activity(activity_num = 0, sel_location = "chest", force_reload = False):
+        # helper function for one line loading of one axctivity of RWHAR dataset 
+    
+    table = load_table(filepaths = DEFAULT_RWHAR_FILEPATH,
+                       clean_func = dataset.clean_RWHAR, 
+                       save_file = "clean_RWHAR.pkl", 
+                       force_reload = force_reload
+                      )
+    print("Selecting location : ",sel_location)
+    table = table[table.location == dataset.RWHAR_BAND_LOCATION[sel_location]] # selecting location
+    table = table.drop(columns = "location") # drop the now unnecessary location column
+    table = table[table.activity == activity_num+1]
     table = table.dropna() # drop all entries which do not have complete information
     
     print("Windowing")
@@ -175,3 +200,31 @@ def generate_pe(channel, length, period = 100, channel_cosine = True):
                 pe[j,i] = torch.sin(i * 2 * np.pi / period) + torch.cos(j * 2 * np.pi / period)
     
     return pe
+
+def get_dataloaders(data, batch_size, output_size, val_pc):
+    # Function to get the data in a list of tuples and load it to a train and validation dataloaders and the weight of the training dataset.
+    # batch_size and output_size are used in dataloader options
+    # val_pc can be a float or int. If float, it is the percentage split between train and validation.
+    # If int, it is treated as number of validation iterations to generate a spoof validation dataloader filled with ones (used in the GANs). 
+    # data is used as entire train dataset in this case
+    
+    dtset = dataset.TimeSeriesDataset(data)
+    weight = dist(dtset, output_size)
+    
+    if type(val_pc) is float:
+        # We need to split the dataset to val_pc percentage
+        train, val = split(dtset, val_pc = val_pc)
+        train_weight = dist(train, output_size)
+        val_weight = dist(val, output_size)
+        print(train_weight, val_weight) # debug purposes
+        train_iter = torch.utils.data.DataLoader(train, batch_size = batch_size, shuffle = True, num_workers = 10, pin_memory = True)
+        val_iter = torch.utils.data.DataLoader(val, batch_size = batch_size, num_workers = 10, pin_memory = True)
+        
+        return train_iter, val_iter, train_weight
+    else:
+        # spoof validation dataset
+        train_iter = torch.utils.data.DataLoader(dtset, batch_size = batch_size, shuffle = True, num_workers = 10, pin_memory = True)
+        val = torch.ones((batch_size * val_pc, 1))
+        val_iter = torch.utils.data.DataLoader(val, batch_size = batch_size, num_workers = 10, pin_memory = True)
+        
+        return train_iter, val_iter
