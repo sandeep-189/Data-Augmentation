@@ -6,7 +6,7 @@ from EncodeLayer import EncodeLayer
 
 class Generator(nn.Module):
     
-    def __init__(self, noise_len = 100, output_size = (27,100), nheads = 3, period = 50, dim_feedforward = 2048):
+    def __init__(self, noise_len = 100, output_size = (27,100), nheads = 3, period = 50, dim_feedforward = 2048, num_layers = 2):
         super(Generator,self).__init__()
         self.output_size = output_size
         self.noise_len = noise_len
@@ -16,18 +16,8 @@ class Generator(nn.Module):
         
         self.positional_embedding = helper.generate_pe(1, noise_len, period = period)
         
-#         self.layer = nn.Sequential(
-#             nn.TransformerEncoderLayer(d_model = noise_len, nhead = nheads, dim_feedforward = dim_feedforward, dropout = 0.5, activation = "relu"),
-#             nn.Conv1d(1, 10, 1),
-#             nn.TransformerEncoderLayer(d_model = noise_len, nhead = nheads, dim_feedforward = dim_feedforward, dropout = 0.5, activation = "relu"),
-#             nn.Conv1d(10, 1, 1),
-#         )
-        
         self.layer = nn.Sequential(
-            EncodeLayer(d_model = noise_len, nhead = nheads, dim_feedforward = dim_feedforward, dropout = 0.5),
-            nn.Conv1d(1, 10, 1),
-            EncodeLayer(d_model = noise_len, nhead = nheads, dim_feedforward = dim_feedforward, dropout = 0.5),
-            nn.Conv1d(10, 1, 1),
+            *[EncodeLayer(d_model = noise_len, nhead = nheads, dim_feedforward = dim_feedforward, dropout = 0.5) for _ in range(num_layers)],
         )
         
         self.fcn = nn.Sequential(nn.PReLU(), nn.Dropout(0.5),

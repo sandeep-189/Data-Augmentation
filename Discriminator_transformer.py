@@ -6,7 +6,7 @@ from EncodeLayer import EncodeLayer
 
 class Discriminator(nn.Module):
     
-    def __init__(self, input_size = (27,100), nheads = 3, period = 50, dim_feedforward = 2048):
+    def __init__(self, input_size = (27,100), nheads = 3, period = 50, dim_feedforward = 2048, num_layers = 1):
         super(Discriminator,self).__init__()
         self.input_size = input_size
         self.flat_input_size = np.prod(input_size)
@@ -15,18 +15,8 @@ class Discriminator(nn.Module):
         
         self.positional_embedding = helper.generate_pe(input_size[-2], input_size[-1], period = period)
         
-#         self.layer = nn.Sequential(
-#             nn.TransformerEncoderLayer(d_model = self.input_size[-1], nhead = nheads, dim_feedforward = dim_feedforward, dropout = 0.5, activation = "relu"),
-# #             nn.Conv1d(self.input_size[-2], 10, 1),
-# #             nn.TransformerEncoderLayer(d_model = self.input_size[-1], nhead = nheads, dim_feedforward = dim_feedforward, dropout = 0.5, activation = "relu"),
-# #             nn.Conv1d(10, self.input_size[-2], 1),
-#         )
-        
         self.layer = nn.Sequential(
-            EncodeLayer(d_model = self.input_size[-1], nhead = nheads, dim_feedforward = dim_feedforward, dropout = 0.5),
-#             nn.Conv1d(self.input_size[-2], 10, 1),
-#             EncodeLayer(d_model = self.input_size[-1], nhead = nheads, dim_feedforward = dim_feedforward, dropout = 0.5),
-#             nn.Conv1d(10, self.input_size[-2], 1),
+            *[EncodeLayer(d_model = self.input_size[-1], nhead = nheads, dim_feedforward = dim_feedforward, dropout = 0.5) for _ in range(num_layers)],
         )
         
         self.fcn = nn.Sequential(nn.PReLU(), nn.Dropout(0.3),
