@@ -4,6 +4,14 @@ import numpy as np
 from torch.utils.data import random_split
 import torch
 import dataset
+import Generator_LSTM
+import Discriminator_LSTM
+import Generator_transformer
+import Discriminator_transformer
+from F1_score_check import F1_score_check
+from GAN import GAN
+import pytorch_lightning as pl
+from pytorch_lightning.loggers import TensorBoardLogger
 
 DEFAULT_RWHAR_FILEPATH = ["./data/RWHAR/"]
 
@@ -96,7 +104,8 @@ def load_RWHAR_activity(activity_num = 0, sel_location = "chest", force_reload =
     print("Selecting location : ",sel_location)
     table = table[table.location == dataset.RWHAR_BAND_LOCATION[sel_location]] # selecting location
     table = table.drop(columns = "location") # drop the now unnecessary location column
-    table = table[table.activity == activity_num+1]
+    print("Selecting Activity ",activity_num)
+    table = table[table.activity == activity_num]
     table = table.dropna() # drop all entries which do not have complete information
     
     print("Windowing")
@@ -201,13 +210,14 @@ def generate_pe(channel, length, period = 100, channel_cosine = True):
     
     return pe
 
-def get_dataloaders(data, batch_size, output_size, val_pc):
-    # Function to get the data in a list of tuples and load it to a train and validation dataloaders and the weight of the training dataset.
+def get_dataloaders(data_func, batch_size, output_size, val_pc, **kwargs):
+    # Function to get the data from data function and load it to a train and validation dataloaders and the weight of the training dataset.
     # batch_size and output_size are used in dataloader options
     # val_pc can be a float or int. If float, it is the percentage split between train and validation.
     # If int, it is treated as number of validation iterations to generate a spoof validation dataloader filled with ones (used in the GANs). 
-    # data is used as entire train dataset in this case
+    # data_func is a function that returns 
     
+    data = data_func(**kwargs)
     dtset = dataset.TimeSeriesDataset(data)
     weight = dist(dtset, output_size)
     
@@ -228,3 +238,149 @@ def get_dataloaders(data, batch_size, output_size, val_pc):
         val_iter = torch.utils.data.DataLoader(val, batch_size = batch_size, num_workers = 10, pin_memory = True)
         
         return train_iter, val_iter
+    
+def load_pl_model(ckpt_path, class_name, remove_prefix ="model.", strict_loading = False,  **kwargs):
+    # Validation model has to be extracted from pytorch lightning modules so this is a one line loading
+    # remove_prefix can be set to None if you dont want any prefix to be removed from ckpt file
+    # strict _loading is a boolean used to indicate if the names has to be checked and if error should be thrown for 
+    # unknown variables in state_dict of the ckpt file
+    # **kwargs is passed to class being initialized/loaded
+    
+    val_model = class_name(**kwargs)
+    state_dict = torch.load(ckpt_path)["state_dict"]
+    
+    if remove_prefix is not None:
+        state_dict = remove_prefix_from_dict(remove_prefix, state_dict)
+    val_model.load_state_dict(state_dict, strict = strict_loading)
+    val_model.eval()
+    return val_model
+
+def train_LSTM_GAN(
+                data_func,
+                val_model,
+                start_activity = 1,
+                total_activities = 7,
+                val_iter_size = 3,
+                batch_size = 20,
+                data_size = (27, 100),
+                noise_len = 100,
+                gen_num_layers = 2,
+                gen_bidirectional = False,
+                dis_hidden_size = 100,
+                dis_num_layers = 2,
+                dis_bidirectional = False,
+                decay = 1,
+                dis_lr = 0.0002,
+                gen_lr = 0.0002,
+                tensorboard_save_dir = "LSTM_GAN_logs",
+                tensorboard_name_prefix = "PAMAP2_act_",
+                monitor = "val_f1_score",
+                threshold_value = 0.95,**kwargs):
+    # One line training using pytorch lightning abstraction framework
+    # data_func is a function which takes in activity_num and gives the data of only those data
+    # val_model is the trained classifier to determine if GAN output is identifiable as that activity
+    
+    success = {}
+    
+    for chosen_activity in range(start_activity,total_activities+1):
+        train_iter, val_iter = get_dataloaders(data_func, batch_size = batch_size, output_size = total_activities, val_pc = val_iter_size, activity_num = chosen_activity, **kwargs)
+
+        model = GAN(val_model = val_model, 
+                    noise_len = noise_len, 
+                    val_expected_output = chosen_activity-1,
+                    generator = Generator_LSTM.Generator(hidden_size = noise_len, num_layers = gen_num_layers, 
+                                                         bidirectional = gen_bidirectional, noise_len = noise_len, 
+                                                         output_size = data_size),
+                    discriminator = Discriminator_LSTM.Discriminator(hidden_size = dis_hidden_size, 
+                                                                     bidirectional = dis_bidirectional, 
+                                                                     num_layers = dis_num_layers, input_size = data_size),
+                    num_classes = total_activities,
+                    decay = decay,
+                    dis_lr = dis_lr,
+                    gen_lr = gen_lr,
+                   )
+
+        trainer = pl.Trainer(gpus=-1,
+                             max_epochs=100,
+                             callbacks = [F1_score_check(monitor, threshold_value), 
+                                         ], # Early stopping callback
+                             logger = TensorBoardLogger(save_dir = tensorboard_save_dir, name = tensorboard_name_prefix + str(chosen_activity)),
+                             check_val_every_n_epoch = 5,
+                             )
+        trainer.fit(model, train_iter, val_iter)
+        
+        # verify if the model is trained
+        if trainer.callback_metrics[monitor] >= threshold_value:
+            print("Success!")
+            success[chosen_activity] = trainer.logger.version
+        else: # model not traineds:
+            success[chosen_activity] = None
+
+    print(success)
+    
+def train_transformer_GAN(
+                    data_func,
+                    val_model,
+                    start_activity = 1,
+                    total_activities = 7,
+                    val_iter_size = 3,
+                    batch_size = 32,
+                    data_size = (27, 100),
+                    noise_len = 100,
+                    period = 100,
+                    max_retries = 2,
+                    init_dim_feedforward = 2048,
+                    dim_feedforward_exponent = 5,
+                    gen_nheads = 5,
+                    dis_nheads = 5,
+                    decay = 1,
+                    dis_lr = 0.0002,
+                    gen_lr = 0.0002,
+                    tensorboard_save_dir = "transformer_GAN_logs",
+                    tensorboard_name_prefix = "PAMAP2_act_",
+                    monitor = "val_f1_score",
+                    threshold_value = 0.95,**kwargs):
+    # One line training using pytorch lightning abstraction framework
+    # data_func is a function which takes in activity_num and gives the data of only those data
+    # val_model is the trained classifier to determine if GAN output is identifiable as that activity
+    
+    success = {}
+
+    for chosen_activity in range(start_activity, total_activities+1):
+        try_num = 0
+        dim_feedforward = init_dim_feedforward
+        train_iter, val_iter = get_dataloaders(data_func, batch_size = batch_size, output_size = total_activities, val_pc = val_iter_size, activity_num = chosen_activity)
+
+        while (try_num < max_retries):
+            print("Activity ", chosen_activity,", Try ",try_num)
+            model = GAN(val_model = val_model, 
+                        generator = Generator_transformer.Generator(noise_len = noise_len, output_size = data_size, nheads = gen_nheads, period = period, dim_feedforward = dim_feedforward),
+                        discriminator = Discriminator_transformer.Discriminator(input_size = data_size, nheads = dis_nheads, period = period, dim_feedforward = dim_feedforward),
+                        val_expected_output = chosen_activity - 1,
+                        num_classes = total_activities,
+                        noise_len = noise_len,
+                        decay = decay,
+                        dis_lr = dis_lr,
+                        gen_lr = gen_lr,
+                       )
+
+            trainer = pl.Trainer(gpus=-1,
+                                 max_epochs=100,
+                                 callbacks = [F1_score_check(monitor, threshold_value = threshold_value), 
+                                             ], # Early stopping callback
+                                 logger = TensorBoardLogger(save_dir = tensorboard_save_dir, name = tensorboard_name_prefix + str(chosen_activity)),
+                                 check_val_every_n_epoch = 5,
+                                 )
+            result = trainer.fit(model, train_iter, val_iter)
+            # verify if the model is trained
+            if trainer.callback_metrics[monitor] >= threshold_value or result != 1:
+                print("Success!")
+                success[chosen_activity] = trainer.logger.version
+                break
+            else: # model not trained
+                dim_feedforward *= dim_feedforward_exponent
+                try_num += 1
+                if try_num == max_retries:
+                    success[chosen_activity] = None
+
+    print(success)
