@@ -6,5 +6,5 @@ To use this code run the notbook files. The prototype notebooks contain the code
 Requirements
 python >= 3.8
 pytorch >= 1.7
-pyotrch-lightning >= 1.2.1
+pytorch-lightning >= 1.2.1
 tensorboard >= 2.2
