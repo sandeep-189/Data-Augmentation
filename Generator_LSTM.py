@@ -31,7 +31,7 @@ class Generator(nn.Module):
         element = helper.conv1d_ele_size(helper.conv1d_ele_size(hidden_size, 3, 1, 1, 1), 3, 1, 1, 1)
         ## 1(bidirectional) * 64 * element
         self.fcn = nn.Sequential(nn.PReLU(), nn.Dropout(0.5),
-                                 nn.Conv1d((1+int(bidirectional))*64*element, flat_output_size, 1),
+                                 nn.Conv1d(64*element, flat_output_size, 1),
 #                                  nn.Flatten(), nn.Linear(hidden_size, flat_output_size),
                                 )
         ## Output : 3 * 9 * 100

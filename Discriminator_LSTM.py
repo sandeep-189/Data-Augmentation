@@ -27,7 +27,7 @@ class Discriminator(nn.Module):
         element = helper.conv1d_ele_size(helper.conv1d_ele_size(hidden_size, 3, 1, 1, 1), 3, 1, 1, 1)
         ## 1(bidirectional) * 128 * element
         self.fcn = nn.Sequential(nn.PReLU(), nn.Dropout(0.3),
-                                 nn.Conv1d((1+int(bidirectional))*128*element, 1, 1), nn.Sigmoid(),
+                                 nn.Conv1d(128*element, 1, 1), nn.Sigmoid(),
 #                                  nn.Flatten(), nn.Linear(27*hidden_size, 1),
                                 ) 
         ## Output : 1

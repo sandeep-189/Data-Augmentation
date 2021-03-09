@@ -38,7 +38,10 @@ class GAN(pl.LightningModule):
         if init_weight:
             init_weights(self.generator)
             init_weights(self.discriminator)
-        
+            
+        for param in self.val_model.parameters():
+            param.requires_grad = False
+
         self.save_hyperparameters()
     
     def forward(self, x):
