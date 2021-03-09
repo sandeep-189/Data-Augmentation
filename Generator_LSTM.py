@@ -23,7 +23,7 @@ class Generator(nn.Module):
         self.postlstm = nn.Sequential(BasicConv1d(256, 128, 3, stride = 1, padding = 1, norm_layer = norm_layer),
                                      BasicConv1d(128, 64, 3, stride = 1, padding = 1, norm_layer = norm_layer),
                                      )
-        element = helper.conv1d_ele_size(helper.conv1d_ele_size(hidden_size, 3, 1, 1, 1), 3, 1, 1, 1)
+        element = helper.conv1d_ele_size(helper.conv1d_ele_size((1 + int(bidirectional))*hidden_size, 3, 1, 1, 1), 3, 1, 1, 1)
         ## 1(bidirectional) * 64 * element
         self.fcn = nn.Sequential(nn.PReLU(), nn.Dropout(0.5),
                                  nn.Conv1d(64*element, flat_output_size, 1),

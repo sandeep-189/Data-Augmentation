@@ -112,6 +112,9 @@ def RWHAR_load_table_activity(path_acc, path_gyr):
                 
     return data
 
+def regularize_RWHAR(table, freq = 50):
+    # function 
+
 def clean_RWHAR(filepath):
     # the function reads the files in RWHAR dataset and each subject and each activity labelled in a panda table 
     # filepath is the parent folder containing all the RWHAR dataset.

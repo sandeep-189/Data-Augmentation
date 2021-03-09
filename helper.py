@@ -272,6 +272,7 @@ def train_LSTM_GAN(
                 decay = 1,
                 dis_lr = 0.0002,
                 gen_lr = 0.0002,
+                max_epochs = 100,
                 tensorboard_save_dir = "LSTM_GAN_logs",
                 tensorboard_name_prefix = "PAMAP2_act_",
                 monitor = "val_f1_score",
@@ -301,7 +302,7 @@ def train_LSTM_GAN(
                    )
 
         trainer = pl.Trainer(gpus=-1,
-                             max_epochs=100,
+                             max_epochs=max_epochs,
                              callbacks = [F1_score_check(monitor, threshold_value), 
                                          ], # Early stopping callback
                              logger = TensorBoardLogger(save_dir = tensorboard_save_dir, name = tensorboard_name_prefix + str(chosen_activity)),
@@ -333,9 +334,12 @@ def train_transformer_GAN(
                     dim_feedforward_exponent = 5,
                     gen_nheads = 5,
                     dis_nheads = 5,
+                    gen_num_layers = 1,
+                    dis_num_layers = 1,
                     decay = 1,
                     dis_lr = 0.0002,
                     gen_lr = 0.0002,
+                    max_epochs = 100,
                     tensorboard_save_dir = "transformer_GAN_logs",
                     tensorboard_name_prefix = "PAMAP2_act_",
                     monitor = "val_f1_score",
@@ -354,8 +358,8 @@ def train_transformer_GAN(
         while (try_num < max_retries):
             print("Activity ", chosen_activity,", Try ",try_num)
             model = GAN(val_model = val_model, 
-                        generator = Generator_transformer.Generator(noise_len = noise_len, output_size = data_size, nheads = gen_nheads, period = period, dim_feedforward = dim_feedforward),
-                        discriminator = Discriminator_transformer.Discriminator(input_size = data_size, nheads = dis_nheads, period = period, dim_feedforward = dim_feedforward),
+                        generator = Generator_transformer.Generator(noise_len = noise_len, output_size = data_size, nheads = gen_nheads, period = period, dim_feedforward = dim_feedforward, num_layers = gen_num_layers),
+                        discriminator = Discriminator_transformer.Discriminator(input_size = data_size, nheads = dis_nheads, period = period, dim_feedforward = dim_feedforward, num_layers = dis_num_layers),
                         val_expected_output = chosen_activity - 1,
                         num_classes = total_activities,
                         noise_len = noise_len,
@@ -365,7 +369,7 @@ def train_transformer_GAN(
                        )
 
             trainer = pl.Trainer(gpus=-1,
-                                 max_epochs=100,
+                                 max_epochs=max_epochs,
                                  callbacks = [F1_score_check(monitor, threshold_value = threshold_value), 
                                              ], # Early stopping callback
                                  logger = TensorBoardLogger(save_dir = tensorboard_save_dir, name = tensorboard_name_prefix + str(chosen_activity)),
