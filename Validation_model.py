@@ -1,3 +1,7 @@
+## Author : Sandeep Ramachandra, sandeep.ramachandra@student.uni-siegen.de
+## Description : Python file containing pytorch lightning compatible class for training the validation classifiers used 
+##               in this work (both LSTM and transformer based networks)
+
 import pytorch_lightning as pl
 from pytorch_lightning.metrics.functional import f1
 import torch

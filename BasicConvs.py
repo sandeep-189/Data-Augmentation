@@ -1,3 +1,6 @@
+## Author : Sandeep Ramachandra, sandeep.ramachandra@student.uni-siegen.de
+## Description : Python file containing module class for convolution, batchnorm(optional) and relu together for 1d and 2d
+
 import torch
 import torch.nn as nn
 

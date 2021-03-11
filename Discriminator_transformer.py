@@ -1,3 +1,6 @@
+## Author : Sandeep Ramachandra, sandeep.ramachandra@student.uni-siegen.de
+## Description : Python file containing Self attention based discriminator(transformer discriminator) of GAN network
+
 import torch
 import torch.nn as nn
 import numpy as np
@@ -11,9 +14,11 @@ class Discriminator(nn.Module):
         self.input_size = input_size
         self.flat_input_size = np.prod(input_size)
         
+        # Produce a learned embedding for timeseries (for word data this is a word bag embedding)
         self.embedding = nn.Conv1d(self.flat_input_size, self.flat_input_size, 1)
         
-        self.positional_embedding = helper.generate_pe(input_size[-2], input_size[-1], period = period)
+        # constant which is added to every timeseries data
+        self.positional_embedding = helper.generate_pe(input_size[-2], input_size[-1], period = period) 
         
         self.layer = nn.Sequential(
             *[EncodeLayer(d_model = self.input_size[-1], nhead = nheads, dim_feedforward = dim_feedforward, dropout = 0.5) for _ in range(num_layers)],

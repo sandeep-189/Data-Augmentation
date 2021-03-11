@@ -1,3 +1,6 @@
+## Author : Sandeep Ramachandra, sandeep.ramachandra@student.uni-siegen.de
+## Description : Python file containing rewritten TransformerEncodeLayer from Pytorch library to use convolutions instead of linear layers and a densely connected input before the self attention layer
+
 import torch
 import torch.nn as nn
 

@@ -1,3 +1,6 @@
+## Author : Sandeep Ramachandra, sandeep.ramachandra@student.uni-siegen.de
+## Description : Python file containing custom earlystopping callback class of pytorch lightning to check the F1 score being atleast the threshold value.
+
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 import torch
 import torch.nn as nn

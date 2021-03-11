@@ -1,3 +1,6 @@
+## Author : Sandeep Ramachandra, sandeep.ramachandra@student.uni-siegen.de
+## Description : Python file containing dataset class for timeseries data and the functions to clean PAMAP2 and RWHAR datasets
+
 import pandas as pd
 import os
 import numpy as np
@@ -7,6 +10,7 @@ import zipfile
 from io import BytesIO
 
 class TimeSeriesDataset(torch.utils.data.Dataset):
+    # Reads a list of tuple of timeseries data and target data into a Pytorch dataloader compatible format
     def __init__(self, List):
         super(TimeSeriesDataset,self).__init__()
         self.data = List
@@ -113,7 +117,8 @@ def RWHAR_load_table_activity(path_acc, path_gyr):
     return data
 
 def regularize_RWHAR(table, freq = 50):
-    # function 
+    # function to interpolate data to a regular frequency to ensure that the RWHAR dataset can be read correctly
+    # table is a panda dataframe containg the RWHAR 
     pass
 
 def clean_RWHAR(filepath):

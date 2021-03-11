@@ -1,3 +1,6 @@
+## Author : Sandeep Ramachandra, sandeep.ramachandra@student.uni-siegen.de
+## Description : Python file containing GAN netowrk compatible with Pytorch and pytorch lightning
+
 import torch
 import torch.nn as nn
 import pytorch_lightning as pl

@@ -1,3 +1,6 @@
+## Author : Sandeep Ramachandra, sandeep.ramachandra@student.uni-siegen.de
+## Description : Python file containing transformer based classifier for timeseries data
+
 import torch
 import torch.nn as nn
 from EncodeLayer import EncodeLayer

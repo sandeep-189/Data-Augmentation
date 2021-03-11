@@ -1,3 +1,6 @@
+## Author : Sandeep Ramachandra, sandeep.ramachandra@student.uni-siegen.de
+## Description : Python file containing LSTM based generator of GAN network
+
 import torch
 import torch.nn as nn
 import numpy as np

@@ -1,3 +1,6 @@
+## Author : Sandeep Ramachandra, sandeep.ramachandra@student.uni-siegen.de
+## Description : Python file containing one line loading for each of the training functions for all networks in this work
+
 import pandas as pd
 import os
 import numpy as np
