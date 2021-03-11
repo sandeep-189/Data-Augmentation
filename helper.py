@@ -82,6 +82,11 @@ def load_RWHAR(sel_location = "chest", force_reload = False):
     table = table.drop(columns = "location") # drop the now unnecessary location column
     table = table.dropna() # drop all entries which do not have complete information
     
+    # Debugging
+    table = table.where(table.activity != 3)
+    table = table.dropna()
+    table.replace({'activity':{4:3,5:4,6:5,7:6,8:7}}, inplace = True)
+    
     print("Windowing")
     # Since each subject has different timestamps and the windowing function does not check the timestamps, we have to window each subject 
     # separately and append them together
