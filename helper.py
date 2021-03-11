@@ -12,6 +12,11 @@ from F1_score_check import F1_score_check
 from GAN import GAN
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
+from DeepConvLSTM_model import DeepConvNet
+from TransformerClassifier import TransformerClassifier
+from Validation_model import Net
 
 DEFAULT_RWHAR_FILEPATH = ["./data/RWHAR/"]
 
@@ -393,3 +398,70 @@ def train_transformer_GAN(
                     success[chosen_activity] = None
 
     print(success)
+    
+def train_LSTM_validation_model(
+                data_func,
+                total_activities = 7,
+                val_pc = 0.3,
+                batch_size = 20,
+                data_size = (27, 100),
+                hidden_size = 128,
+                conv_filter = (5,9), 
+                conv_padding = (2,4),
+                lr = 0.0001,
+                max_epochs = 100,
+                tensorboard_save_dir = "Validation_LSTM_logs",
+                tensorboard_name_prefix = "PAMAP2",
+                monitor = "val_f1_score",**kwargs):
+    # One line training using pytorch lightning abstraction framework
+    # data_func is a function which takes in activity_num and gives the data of only those data
+    
+    train_iter, val_iter,train_weight = get_dataloaders(data_func, batch_size = batch_size, output_size = total_activities, val_pc = val_pc, **kwargs)
+        
+    net = DeepConvNet(in_channels = data_size[0], input_size = data_size[-1], hidden_size = hidden_size, output_size = total_activities, conv_filter = conv_filter, conv_padding = conv_padding)
+    model = Net(model = net, num_classes = total_activities, classes_weight = torch.tensor(train_weight, dtype = torch.float), lr = lr)
+
+    trainer = pl.Trainer(gpus=-1,
+                         max_epochs=max_epochs,
+                         log_every_n_steps = 200,
+                         callbacks = [EarlyStopping(monitor = monitor, patience = 5, mode = "max"),
+                                     ModelCheckpoint(monitor = monitor, filename = '{epoch}-{val_loss:.3f}-{'+monitor+':.3f}', mode = 'max'),
+                                     ],
+                         logger = TensorBoardLogger(save_dir = tensorboard_save_dir, name = tensorboard_name_prefix),
+                         stochastic_weight_avg=True
+                         )
+    trainer.fit(model, train_iter, val_iter)
+    
+def train_transformer_validation_model(
+                data_func,
+                total_activities = 7,
+                val_pc = 0.3,
+                batch_size = 20,
+                data_size = (27, 100),
+                nhead = 5,
+                dim_feedforward = 2048,
+                dropout = 0.3,
+                num_layer = 1,
+                lr = 0.0001,
+                max_epochs = 100,
+                tensorboard_save_dir = "Validation_transformer_logs",
+                tensorboard_name_prefix = "PAMAP2",
+                monitor = "val_f1_score",**kwargs):
+    # One line training using pytorch lightning abstraction framework
+    # data_func is a function which takes in activity_num and gives the data of only those data
+    
+    train_iter, val_iter,train_weight = get_dataloaders(data_func, batch_size = batch_size, output_size = total_activities, val_pc = val_pc, **kwargs)
+        
+    net = TransformerClassifier(in_channels = data_size[0], d_model = data_size[-1], output_size = total_activities, nhead = nhead, dim_feedforward = dim_feedforward, dropout= dropout, num_layer = num_layer)
+    model = Net(model = net, num_classes = total_activities, classes_weight = torch.tensor(train_weight, dtype = torch.float), lr = lr)
+
+    trainer = pl.Trainer(gpus=-1,
+                         max_epochs=max_epochs,
+                         log_every_n_steps = 200,
+                         callbacks = [EarlyStopping(monitor = monitor, patience = 5, mode = "max"),
+                                     ModelCheckpoint(monitor = monitor, filename = '{epoch}-{val_loss:.3f}-{'+monitor+':.3f}', mode = 'max'),
+                                     ],
+                         logger = TensorBoardLogger(save_dir = tensorboard_save_dir, name = tensorboard_name_prefix),
+                         stochastic_weight_avg=True
+                         )
+    trainer.fit(model, train_iter, val_iter)
