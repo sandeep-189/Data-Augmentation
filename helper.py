@@ -87,11 +87,6 @@ def load_RWHAR(sel_location = "chest", force_reload = False):
     table = table.drop(columns = "location") # drop the now unnecessary location column
     table = table.dropna() # drop all entries which do not have complete information
     
-    # Debugging
-    table = table.where(table.activity != 3)
-    table = table.dropna()
-    table.replace({'activity':{4:3,5:4,6:5,7:6,8:7}}, inplace = True)
-    
     print("Windowing")
     # Since each subject has different timestamps and the windowing function does not check the timestamps, we have to window each subject 
     # separately and append them together
@@ -452,7 +447,7 @@ def train_transformer_validation_model(
     
     train_iter, val_iter,train_weight = get_dataloaders(data_func, batch_size = batch_size, output_size = total_activities, val_pc = val_pc, **kwargs)
         
-    net = TransformerClassifier(in_channels = data_size[0], d_model = data_size[-1], output_size = total_activities, nhead = nhead, dim_feedforward = dim_feedforward, dropout= dropout, num_layer = num_layer)
+    net = TransformerClassifier(in_channels = data_size[0], d_model = data_size[-1], output_size = total_activities, nhead = nhead, dim_feedforward = dim_feedforward, dropout= dropout, num_layers = num_layer)
     model = Net(model = net, num_classes = total_activities, classes_weight = torch.tensor(train_weight, dtype = torch.float), lr = lr)
 
     trainer = pl.Trainer(gpus=-1,
