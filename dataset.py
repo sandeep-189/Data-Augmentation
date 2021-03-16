@@ -98,6 +98,27 @@ def RWHAR_load_csv(path):
         
     return tables_dict
 
+def find_first_close_match(df1, df2):
+    found = False
+    mask = df1.iloc[:50].apply(np.isclose, b = df2.iloc[:50], atol = 2)
+    for i in range(mask.shape[0]):
+        if mask.iat[i].any():
+            # The row number in acc and gyr where this index is found
+            acc_start = i
+            gyr_start = mask.iat[i].argmax()
+            found = True
+            break
+    if not found:
+        mask = df1.apply(np.isclose, b = df2, atol = 2)
+        for i in range(mask.shape[0]):
+            if mask.iat[i].any():
+                # The row number in acc and gyr where this index is found
+                acc_start = i
+                gyr_start = mask.iat[i].argmax()
+                found = True
+                break
+    return acc_start, gyr_start
+
 def RWHAR_load_table_activity(path_acc, path_gyr):
     # Logic for loading each activity zip file for acc and gyr and then merging the tables at each location
     
@@ -106,22 +127,28 @@ def RWHAR_load_table_activity(path_acc, path_gyr):
     data = pd.DataFrame()
     
     for loc in acc_tables.keys():
-        acc_tab = acc_tables[loc].set_index("timestamp")
-        gyr_tab = gyr_tables[loc].set_index("timestamp")
+        acc_tab = acc_tables[loc]
+        gyr_tab = gyr_tables[loc]
+
+        # find first timestamp which aligns the 2 tables
+        acc_start, gyr_start = find_first_close_match(acc_tab['timestamp'],gyr_tab['timestamp'])
         
-        acc_tab = acc_tab.join(gyr_tab)
+        # remove all data that comes before the start
+        acc_tab = acc_tab.iloc[acc_start:]
+        gyr_tab = gyr_tab.iloc[gyr_start:]
+        
+        # merge the two table based on timestamp being within +- tolerance milliseconds 
+        # (all which do not conform will be dropped later)
+        acc_tab = pd.merge_asof(left = acc_tab, right = gyr_tab, on = "timestamp", 
+                                direction = "nearest", tolerance = 10)
+        
         acc_tab["location"] = loc
         
         data = data.append(acc_tab)
-                
+    
     return data
 
-def regularize_RWHAR(table, freq = 50):
-    # function to interpolate data to a regular frequency to ensure that the RWHAR dataset can be read correctly
-    # table is a panda dataframe containg the RWHAR 
-    pass
-
-def clean_RWHAR(filepath):
+def clean_RWHAR(filepath, sel_location = None):
     # the function reads the files in RWHAR dataset and each subject and each activity labelled in a panda table 
     # filepath is the parent folder containing all the RWHAR dataset.
     # Note: all entries are loaded but their timestamps are not syncronised. So a single location must be selected and 
@@ -151,5 +178,11 @@ def clean_RWHAR(filepath):
         sub_pd["subject"] = subject_num # add subject id to all entries
         dataset = dataset.append(sub_pd)
     
+    if sel_location is not None:
+        print("Selecting location : ",sel_location)
+        dataset = dataset[dataset.location == RWHAR_BAND_LOCATION[sel_location]]
+        dataset = dataset.drop(columns = "location")
     
+    dataset = dataset.drop(columns = "timestamp")
+    dataset = dataset.dropna()
     return dataset

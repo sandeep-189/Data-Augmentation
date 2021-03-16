@@ -27,24 +27,24 @@ DEFAULT_PAMAP2_FILEPATHS = ["./data/PAMAP2/subject101.dat","./data/PAMAP2/subjec
 
 
 
-def clean_all_files(filepaths, clean_func): 
+def clean_all_files(filepaths, clean_func, **kwargs): 
     # filespaths is a list of text files with panda tables stored in them.
     # the clean_func is a reference to the function to be applied to clean the dataset
     
     total = pd.DataFrame()
     
     for file in filepaths:
-        table = clean_func(file) # table has cleaned dataset from one file
+        table = clean_func(file, **kwargs) # table has cleaned dataset from one file
         total = total.append(table,ignore_index = True) # joins all data into one dataframe
     return total
 
-def load_table(filepaths = DEFAULT_PAMAP2_FILEPATHS, clean_func = dataset.clean_PAMAP2_dataset, save_file = "clean_PAMAP2.pkl", force_reload = False):
+def load_table(filepaths = DEFAULT_PAMAP2_FILEPATHS, clean_func = dataset.clean_PAMAP2_dataset, save_file = "clean_PAMAP2.pkl", force_reload = False, **kwargs):
     # function to load a panda table from filepaths, clean each table using given clean_func, append them into one table and return it.
     # the table is saved and reloaded when needed or when forced to reload it.
     
     if ((not os.path.isfile(save_file)) or force_reload): 
         print("Cleaning and loading subject files")
-        table = clean_all_files(filepaths, clean_func)
+        table = clean_all_files(filepaths, clean_func, **kwargs)
         print("Compressing to file")
         table.to_pickle(save_file, compression="gzip")
     else:
@@ -82,13 +82,10 @@ def load_RWHAR(sel_location = "chest", force_reload = False):
     
     table = load_table(filepaths = DEFAULT_RWHAR_FILEPATH,
                        clean_func = dataset.clean_RWHAR, 
-                       save_file = "clean_RWHAR.pkl", 
-                       force_reload = force_reload
+                       save_file = "clean_RWHAR_"+sel_location+".pkl", 
+                       force_reload = force_reload,
+                       sel_location = "chest",
                       )
-    print("Selecting location : ",sel_location)
-    table = table[table.location == dataset.RWHAR_BAND_LOCATION[sel_location]] # selecting location
-    table = table.drop(columns = "location") # drop the now unnecessary location column
-    table = table.dropna() # drop all entries which do not have complete information
     
     print("Windowing")
     # Since each subject has different timestamps and the windowing function does not check the timestamps, we have to window each subject 
@@ -106,12 +103,11 @@ def load_RWHAR_activity(activity_num = 0, sel_location = "chest", force_reload =
     
     table = load_table(filepaths = DEFAULT_RWHAR_FILEPATH,
                        clean_func = dataset.clean_RWHAR, 
-                       save_file = "clean_RWHAR.pkl", 
-                       force_reload = force_reload
+                       save_file = "clean_RWHAR_"+sel_location+".pkl", 
+                       force_reload = force_reload,
+                       sel_location = sel_location,
                       )
-    print("Selecting location : ",sel_location)
-    table = table[table.location == dataset.RWHAR_BAND_LOCATION[sel_location]] # selecting location
-    table = table.drop(columns = "location") # drop the now unnecessary location column
+    
     print("Selecting Activity ",activity_num)
     table = table[table.activity == activity_num]
     table = table.dropna() # drop all entries which do not have complete information
@@ -234,7 +230,7 @@ def get_dataloaders(data_func, batch_size, output_size, val_pc, **kwargs):
         train, val = split(dtset, val_pc = val_pc)
         train_weight = dist(train, output_size)
         val_weight = dist(val, output_size)
-        print(train_weight, val_weight) # debug purposes
+        print("Train weights : \n",train_weight,"\nValidation weights : \n", val_weight) # debug purposes
         train_iter = torch.utils.data.DataLoader(train, batch_size = batch_size, shuffle = True, num_workers = 10, pin_memory = True)
         val_iter = torch.utils.data.DataLoader(val, batch_size = batch_size, num_workers = 10, pin_memory = True)
         
