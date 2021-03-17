@@ -139,8 +139,8 @@ def RWHAR_load_table_activity(path_acc, path_gyr):
         
         # merge the two table based on timestamp being within +- tolerance milliseconds 
         # (all which do not conform will be dropped later)
-        acc_tab = pd.merge_asof(left = acc_tab, right = gyr_tab, on = "timestamp", 
-                                direction = "nearest", tolerance = 10)
+        acc_tab = pd.merge_asof(left = gyr_tab, right = acc_tab, on = "timestamp", 
+                                direction = "nearest", tolerance = 20)
         
         acc_tab["location"] = loc
         
@@ -185,4 +185,5 @@ def clean_RWHAR(filepath, sel_location = None):
     
     dataset = dataset.drop(columns = "timestamp")
     dataset = dataset.dropna()
+    print(dataset['activity'].value_counts())
     return dataset
