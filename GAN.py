@@ -6,7 +6,8 @@ import torch.nn as nn
 import pytorch_lightning as pl
 import numpy as np
 import random
-from pytorch_lightning.metrics.functional import f1
+# from pytorch_lightning.metrics.functional import f1
+from pytorch_lightning.metrics import F1
 
 # Set random seed for reproducibility
 # manualSeed = 3942 # 7595 # 6161 # 8037
@@ -36,6 +37,7 @@ class GAN(pl.LightningModule):
         self.val_model = val_model
         self.num_classes = num_classes
         self.val_expected_output = val_expected_output
+        self.f1 = F1(num_classes = num_classes)
         
         # init weights
         if init_weight:
@@ -133,7 +135,8 @@ class GAN(pl.LightningModule):
         label = torch.full((batch.shape[0],), self.val_expected_output, dtype = torch.long, device = self.device)
         val_loss = nn.CrossEntropyLoss()(fake_outputs, label)
         self.log("val_loss", val_loss, on_step = False, on_epoch = True, prog_bar = False, logger = True)
-        self.log('val_f1_score', f1(fake_outputs, label, num_classes = self.num_classes, average = "micro"), on_step = False, on_epoch = True, prog_bar = True, logger = True)    
+        self.f1(fake_outputs, label)
+        self.log('val_f1_score', self.f1, on_step = False, on_epoch = True, prog_bar = True, logger = True)    
         return val_loss
     
     def configure_optimizers(self):

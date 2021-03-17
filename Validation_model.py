@@ -3,7 +3,8 @@
 ##               in this work (both LSTM and transformer based networks)
 
 import pytorch_lightning as pl
-from pytorch_lightning.metrics.functional import f1
+# from pytorch_lightning.metrics.functional import f1
+from pytorch_lightning.metrics import F1
 import torch
 import torch.nn as nn
 
@@ -15,6 +16,8 @@ class Net(pl.LightningModule):
         self.monitor = monitor
         self.num_classes = num_classes
         self.criterion = nn.CrossEntropyLoss(weight = classes_weight);
+        self.train_f1 = F1(num_classes = num_classes)
+        self.val_f1 = F1(num_classes = num_classes)
         
     def forward(self, input_seq):
         return self.model(input_seq)
@@ -32,14 +35,16 @@ class Net(pl.LightningModule):
         y_pred = self(batch["data"])
         loss = self.criterion(y_pred, batch["label"])
         self.log('train_loss', loss, on_step = False, on_epoch = True, prog_bar = False, logger = True)
-        self.log('train_f1_score', f1(y_pred, batch["label"], num_classes = self.num_classes, average = "micro"), on_step = False, on_epoch = True, prog_bar = True, logger = True)
+        self.train_f1(y_pred, batch["label"])
+        self.log('train_f1_score', self.train_f1, on_step = False, on_epoch = True, prog_bar = True, logger = True)
         return loss
     
     def validation_step(self, batch, batch_idx):
         y_pred = self(batch["data"])
         loss = self.criterion(y_pred, batch["label"])
         self.log('val_loss', loss, on_step = False, on_epoch = True, prog_bar = False, logger = True)
-        self.log('val_f1_score', f1(y_pred, batch["label"], num_classes = self.num_classes, average = "micro"), on_step = False, on_epoch = True, prog_bar = True, logger = True)
+        self.val_f1(y_pred, batch["label"])
+        self.log('val_f1_score', self.val_f1, on_step = False, on_epoch = True, prog_bar = True, logger = True)
         return loss
     
     @staticmethod
