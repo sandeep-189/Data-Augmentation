@@ -308,6 +308,7 @@ def train_LSTM_GAN(
         trainer = pl.Trainer(gpus=-1,
                              max_epochs=max_epochs,
                              callbacks = [F1_score_check(monitor, threshold_value), 
+                                          ModelCheckpoint(monitor = monitor, filename = '{epoch}-{val_loss:.3f}-{'+monitor+':.3f}', mode = 'max', save_weights_only = True),
                                          ], # Early stopping callback
                              logger = TensorBoardLogger(save_dir = tensorboard_save_dir, name = tensorboard_name_prefix + str(chosen_activity)),
                              check_val_every_n_epoch = 5,
@@ -375,6 +376,7 @@ def train_transformer_GAN(
             trainer = pl.Trainer(gpus=-1,
                                  max_epochs=max_epochs,
                                  callbacks = [F1_score_check(monitor, threshold_value = threshold_value), 
+                                              ModelCheckpoint(monitor = monitor, filename = '{epoch}-{val_loss:.3f}-{'+monitor+':.3f}', mode = 'max', save_weights_only = True),
                                              ], # Early stopping callback
                                  logger = TensorBoardLogger(save_dir = tensorboard_save_dir, name = tensorboard_name_prefix + str(chosen_activity)),
                                  check_val_every_n_epoch = 5,
@@ -419,7 +421,7 @@ def train_LSTM_validation_model(
                          max_epochs=max_epochs,
                          log_every_n_steps = 200,
                          callbacks = [EarlyStopping(monitor = monitor, patience = 5, mode = "max"),
-                                     ModelCheckpoint(monitor = monitor, filename = '{epoch}-{val_loss:.3f}-{'+monitor+':.3f}', mode = 'max'),
+                                     ModelCheckpoint(monitor = monitor, filename = '{epoch}-{val_loss:.3f}-{'+monitor+':.3f}', mode = 'max', save_weights_only = True),
                                      ],
                          logger = TensorBoardLogger(save_dir = tensorboard_save_dir, name = tensorboard_name_prefix),
                          stochastic_weight_avg=True
@@ -453,7 +455,7 @@ def train_transformer_validation_model(
                          max_epochs=max_epochs,
                          log_every_n_steps = 200,
                          callbacks = [EarlyStopping(monitor = monitor, patience = 5, mode = "max"),
-                                     ModelCheckpoint(monitor = monitor, filename = '{epoch}-{val_loss:.3f}-{'+monitor+':.3f}', mode = 'max'),
+                                     ModelCheckpoint(monitor = monitor, filename = '{epoch}-{val_loss:.3f}-{'+monitor+':.3f}', mode = 'max', save_weights_only = True),
                                      ],
                          logger = TensorBoardLogger(save_dir = tensorboard_save_dir, name = tensorboard_name_prefix),
                          stochastic_weight_avg=True
