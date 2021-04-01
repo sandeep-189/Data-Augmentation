@@ -7,6 +7,8 @@ import numpy as np
 from torch.utils.data import random_split
 import torch
 import dataset
+import re
+
 import Generator_LSTM
 import Discriminator_LSTM
 import Generator_transformer
@@ -84,7 +86,7 @@ def load_RWHAR(sel_location = "chest", force_reload = False):
                        clean_func = dataset.clean_RWHAR, 
                        save_file = "clean_RWHAR_"+sel_location+".pkl", 
                        force_reload = force_reload,
-                       sel_location = "chest",
+                       sel_location = sel_location,
                       )
     
     print("Windowing")
@@ -122,6 +124,21 @@ def load_RWHAR_activity(activity_num = 0, sel_location = "chest", force_reload =
         data.extend(tmp)
     print("Done!")
     return data
+
+def get_activityfunc(datasetname):
+    # One line function to get the function and number of activities for PAMAP2 and RWHAR only (used in graphing)
+    
+    if datasetname == "PAMAP2":
+        total_activity = 7
+        activityfunc = load_PAMAP2_activity
+    elif datasetname == "RWHAR":
+        total_activity = 8
+        activityfunc = load_RWHAR_activity
+    else:
+        print("Invalid dataset name : Function only handles PAMAP2 or RWHAR")
+        return
+    
+    return activityfunc, total_activity
 
 def windowing(df, time_window = 1, sampling_freq = 100, group_col_num = 1, data_columns = range(2,29)):
     # df is the cleaned dataframe from dataset. This function will break the different activities to "window"
@@ -259,6 +276,27 @@ def load_pl_model(ckpt_path, class_name, remove_prefix ="model.", strict_loading
     val_model.eval()
     return val_model
 
+def load_tensorboard_models(datasetname, total_activity, path_tensorboard_folder):
+    # load models for each activity in a tensorboard save directory
+    # datasetname is either PAMAP2 or RWHAR
+    # path_tensorboard_folder is the path to the dataset folder. model loaded will be the latest version in each activity
+    activity_folder = [sub for sub in os.listdir(path_tensorboard_folder) if sub.startswith(datasetname)]
+    if len(activity_folder) != total_activity:
+        print("Not all activities are present at folder")
+    
+    # plotting
+    for activity in activity_folder:
+        activity_num = int(re.findall('\d+', activity )[-1])
+        
+        version_folder = max(os.listdir(path_tensorboard_folder+"/"+activity))
+        
+        path = path_tensorboard_folder+"/"+activity+"/"+version_folder+"/checkpoints/"
+        ckpt = os.listdir(path)[0]
+        
+        model = GAN.load_from_checkpoint(path+ckpt)
+        
+        yield model, activity_num
+        
 def train_LSTM_GAN(
                 data_func,
                 val_model,

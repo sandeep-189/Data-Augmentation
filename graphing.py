@@ -76,7 +76,7 @@ def plot_activity(activity_func, activity_num, model, fake_suffix = None, groupi
                               display = display, save_name = save_name_real)
     _, _ = plot_timeseries_2d(syn_data, grouping = grouping, label = label, time_unit = time_unit,
                               display = display, save_name = save_name_fake)
-
+    
 def plot_realvsfake(datasetname, path_tensorboard_folder, fake_suffix, grouping = 3, label = None,
                     time_unit = 0.01, display = True):
     # one line loading function to identify dataset function and load each model for each activity from folder
@@ -84,37 +84,65 @@ def plot_realvsfake(datasetname, path_tensorboard_folder, fake_suffix, grouping 
     # datasetname is either PAMAP2 or RWHAR
     # path_tensorboard_folder is the path to the dataset folder. model loaded will be the latest version in each activity
     
-    # checking input
-    if datasetname == "PAMAP2":
-        total_activity = 7
-        activityfunc = helper.load_PAMAP2_activity
-    elif datasetname == "RWHAR":
-        total_activity = 8
-        activityfunc = helper.load_RWHAR_activity
-    else:
-        print("Invalid dataset name : Function only handles PAMAP2 or RWHAR")
-        return
-    
-    activity_folder = [sub for sub in os.listdir(path_tensorboard_folder) if sub.startswith(datasetname)]
-    if len(activity_folder) != total_activity:
-        print("Not all activities are present at folder : use plot activity for individual activity")
-    
-    # plotting
-    for activity in activity_folder:
-        activity_num = int(re.findall('\d+', activity )[-1])
-        
-        version_folder = max(os.listdir(path_tensorboard_folder+"/"+activity))
-        
-        path = path_tensorboard_folder+"/"+activity+"/"+version_folder+"/checkpoints/"
-        ckpt = os.listdir(path)[0]
-        
-        model = GAN.load_from_checkpoint(path+ckpt)
+    activityfunc, total_activity = helper.get_activityfunc(datasetname)
+
+    for model, activity_num in helper.load_tensorboard_models(datasetname, total_activity, path_tensorboard_folder):
         
         plot_activity(activityfunc, activity_num, model, fake_suffix = fake_suffix,
-                      save_prefix = "./figures/"+datasetname+"_"+activity, grouping = grouping,
+                      save_prefix = "./figures/"+datasetname+"_activity_"+str(activity_num), grouping = grouping,
                       label = label, time_unit = time_unit, display = display)
 
     
+def mean_calc(data):
+    # Calculate mean timeseries of input data. Pass only one activity data.
+    # the function can handle a list of tuple of timeseries, target as well as list of timeseries
+    if type(data[0]) is tuple:
+        mean = np.zeros_like(data[0][0])
+        items = 0
+        for timeseries,_ in data: 
+            mean += timeseries
+            items += 1
+        mean = mean / items
+    else:
+        mean = np.zeros_like(data[0])
+        items = 0
+        for timeseries in data: 
+            mean += timeseries
+            items += 1
+        mean = mean / items 
+    return mean
+
+def mean_calc_real(dataset = "PAMAP2", sampling_size = 100, grouping = 3, label = None,
+                    time_unit = 0.01, display = True, save = False):
+    # Calculate mean for real data (only PAMAP2 or RWHAR supported) and plot the mean timeseries
     
+    activityfunc, total_activity = helper.get_activityfunc(dataset)
+    save_name = None
+    for i in range(total_activity):
+        if save:
+            save_name = "./figures/"+dataset+"_activity_"+str(i+1)+"_real_mean.png"
+        data = activityfunc(i+1)
+        data = random.sample(data, sampling_size)
+        mean = mean_calc(data)
+        plot_timeseries_2d(mean, grouping = grouping, label = label, time_unit = time_unit,
+                              display = display, save_name = save_name)
+        
+def mean_calc_fake(dataset, path_tensorboard_folder, sampling_size = 100, grouping = 3, label = None,
+                    time_unit = 0.01, display = True, save = False, fake_suffix = "LSTM"):
+    # Calculate mean for GAN model and plot it
     
+    _, total_activity = helper.get_activityfunc(dataset)
+    
+    save_name = None
+    for model, activity_num in helper.load_tensorboard_models(dataset, total_activity,path_tensorboard_folder):
+            model.eval()
+            nl = model.noise_len
+            with torch.no_grad():
+                syn_data = [model(torch.randn(1,nl,dtype=torch.float)).numpy()[0] for _ in range(sampling_size)]
+            
+            if save:
+                save_name = "./figures/"+dataset+"_activity_"+str(activity_num)+"_"+fake_suffix+"_mean.png"
+            mean = mean_calc(syn_data)
+            plot_timeseries_2d(mean, grouping = grouping, label = label, time_unit = time_unit,
+                              display = display, save_name = save_name)
         
