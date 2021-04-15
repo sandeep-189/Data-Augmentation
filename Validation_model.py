@@ -19,6 +19,8 @@ class Net(pl.LightningModule):
         self.train_f1 = F1(num_classes = num_classes)
         self.val_f1 = F1(num_classes = num_classes)
         
+        self.save_hyperparameters()
+        
     def forward(self, input_seq):
         return self.model(input_seq)
     

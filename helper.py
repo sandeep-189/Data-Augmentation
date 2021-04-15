@@ -294,7 +294,7 @@ def load_tensorboard_models(datasetname, total_activity, path_tensorboard_folder
         ckpt = os.listdir(path)[0]
         
         model = GAN.load_from_checkpoint(path+ckpt)
-        
+        model.eval()
         yield model, activity_num
         
 def train_LSTM_GAN(
@@ -451,6 +451,8 @@ def train_LSTM_validation_model(
     # data_func is a function which takes in activity_num and gives the data of only those data
     
     train_iter, val_iter,train_weight = get_dataloaders(data_func, batch_size = batch_size, output_size = total_activities, val_pc = val_pc, **kwargs)
+    weight = (1 - train_weight)/np.sum(1 - train_weight)
+    
         
     net = DeepConvNet(in_channels = data_size[0], input_size = data_size[-1], hidden_size = hidden_size, output_size = total_activities, conv_filter = conv_filter, conv_padding = conv_padding)
     model = Net(model = net, num_classes = total_activities, classes_weight = torch.tensor(train_weight, dtype = torch.float), lr = lr)
@@ -485,9 +487,11 @@ def train_transformer_validation_model(
     # data_func is a function which takes in activity_num and gives the data of only those data
     
     train_iter, val_iter,train_weight = get_dataloaders(data_func, batch_size = batch_size, output_size = total_activities, val_pc = val_pc, **kwargs)
+    weight = (1 - train_weight)/np.sum(1 - train_weight)
+        
         
     net = TransformerClassifier(in_channels = data_size[0], d_model = data_size[-1], output_size = total_activities, nhead = nhead, dim_feedforward = dim_feedforward, dropout= dropout, num_layers = num_layer)
-    model = Net(model = net, num_classes = total_activities, classes_weight = torch.tensor(train_weight, dtype = torch.float), lr = lr)
+    model = Net(model = net, num_classes = total_activities, classes_weight = torch.tensor(weight, dtype = torch.float), lr = lr)
 
     trainer = pl.Trainer(gpus=-1,
                          max_epochs=max_epochs,
