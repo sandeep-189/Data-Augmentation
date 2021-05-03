@@ -23,7 +23,7 @@ class Generator(nn.Module):
             *[EncodeLayer(d_model = noise_len, nhead = nheads, dim_feedforward = dim_feedforward, dropout = 0.5) for _ in range(num_layers)],
         )
         
-        self.fcn = nn.Sequential(nn.PReLU(), nn.Dropout(0.5),
+        self.fcn = nn.Sequential(nn.PReLU(), nn.Dropout(0.4),
                                 nn.Conv1d(noise_len, flat_output_size, 1)
                                 )
         

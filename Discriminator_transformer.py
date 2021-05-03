@@ -21,10 +21,10 @@ class Discriminator(nn.Module):
         self.positional_embedding = helper.generate_pe(input_size[-2], input_size[-1], period = period) 
         
         self.layer = nn.Sequential(
-            *[EncodeLayer(d_model = self.input_size[-1], nhead = nheads, dim_feedforward = dim_feedforward, dropout = 0.5) for _ in range(num_layers)],
+            *[EncodeLayer(d_model = self.input_size[-1], nhead = nheads, dim_feedforward = dim_feedforward, dropout = 0.4) for _ in range(num_layers)],
         )
         
-        self.fcn = nn.Sequential(nn.PReLU(), nn.Dropout(0.3),
+        self.fcn = nn.Sequential(nn.PReLU(), nn.Dropout(0.4),
                                  nn.Conv1d(self.flat_input_size, 1, 1), nn.Sigmoid(),
                                 )
         

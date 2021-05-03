@@ -9,9 +9,10 @@ import helper
 from GAN import GAN
 import re
 import random
+from sklearn.metrics import ConfusionMatrixDisplay
 
 
-def plot_timeseries_2d(data, grouping = 3, label = None, time_unit = 0.01, display = True,
+def plot_timeseries_2d(data, ncols = 1, grouping = 3, label = None, time_unit = 0.01, display = True,
                        save_name = None, xlabel = "Time"):
     # function to plot a label vs time plot for multiple sets of timeseries data
     # data is a numpy compatible timeseries array
@@ -26,7 +27,11 @@ def plot_timeseries_2d(data, grouping = 3, label = None, time_unit = 0.01, displ
     
     # create figures
     num_fig = int(num_timeseries/grouping)
-    fig, ax = plt.subplots(nrows = num_fig, ncols = 1, sharex = True, figsize = (20, 3*num_fig))
+    if num_fig % ncols != 0:
+        print("Invalid number of columns. Unable to divide the figures.")
+        return
+    nrows = num_fig / ncols
+    fig, ax = plt.subplots(nrows = nrows, ncols = ncols, sharex = True, figsize = (5*ncols, 3*nrows))
     
     # plotting
     for i in range(num_fig):
@@ -145,4 +150,18 @@ def mean_calc_fake(dataset, path_tensorboard_folder, sampling_size = 100, groupi
             mean = mean_calc(syn_data)
             plot_timeseries_2d(mean, grouping = grouping, label = label, time_unit = time_unit,
                               display = display, save_name = save_name)
-        
+
+def plot_confusion_matrix(model, dataloader,  classes = None):
+    # Plot the comnfusion matrix given a model and a dataloader for it.
+    model.eval()
+    cm = np.zeros((len(classes),len(classes))) # rows is actual, cols is predicted
+    with torch.no_grad():
+        for batch in dataloader:
+            data = batch["data"].to("cuda")
+            label = batch["label"].to("cuda")
+            output = model(data)
+            pred_o = torch.argmax(output, dim=1)
+            for (y_true,y_pred) in zip(label,pred_o):
+                cm[y_true.item(),y_pred.item()] += 1
+    disp = ConfusionMatrixDisplay(confusion_matrix = cm, display_labels = classes)
+    disp.plot(values_format = '.0f',xticks_rotation = "vertical")
