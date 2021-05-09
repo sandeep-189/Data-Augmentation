@@ -158,6 +158,7 @@ def mean_calc_fake(dataset, path_tensorboard_folder, sampling_size = 100, groupi
 
 def plot_confusion_matrix(model, dataloader,  classes = None):
     # Plot the comnfusion matrix given a model and a dataloader for it.
+    
     model.eval()
     cm = np.zeros((len(classes),len(classes))) # rows is actual, cols is predicted
     with torch.no_grad():
@@ -170,3 +171,43 @@ def plot_confusion_matrix(model, dataloader,  classes = None):
                 cm[y_true.item(),y_pred.item()] += 1
     disp = ConfusionMatrixDisplay(confusion_matrix = cm, display_labels = classes)
     disp.plot(values_format = '.0f',xticks_rotation = "vertical")
+
+def correlation(path_tensorboard_folder, dataset = "PAMAP2", sampling_size = 100,):
+    # calculate the correlation of a random sampling from fake data of a given model with the randomly 
+    # sampled real data
+    
+    activityfunc, total_activity = helper.get_activityfunc(dataset)
+    total_res = {}
+    for model, activity_num in helper.load_tensorboard_models(dataset, total_activity,path_tensorboard_folder):
+        # Get x samples of real data
+        data = activityfunc(activity_num)
+        data = random.sample(data, sampling_size)
+        mean_real = mean_calc(data)
+        
+        # Get x samples of fake data
+        model.eval()
+        nl = model.noise_len
+        with torch.no_grad():
+            syn_data = [model(torch.randn(1,nl,dtype=torch.float)).numpy()[0] for _ in range(sampling_size)]
+        mean_fake = mean_calc(syn_data)
+        
+        temp = np.zeros((2, mean_real.shape[-1]))
+        res = []
+        for i in range(mean_real.shape[0]):
+            temp[0][:] = mean_real[i][:]
+            temp[1][:] = mean_fake[i][:]
+            r = np.corrcoef(temp, rowvar = True)
+#             print(f"Activity {activity_num} : r = {r[0][1]:.{3}}")
+            res.append(r[0][1])
+        total_res[activity_num] = res
+#     display(total_res)
+    
+    # plot all activity's r coeff against their axes.
+    x = list(range(1,mean_real.shape[0]+1))
+    for key in range(1,total_activity+1):
+        y = total_res[key]  
+        plt.plot(x, y, label = f"Activity {key}")
+                 
+    plt.legend()
+    plt.show()
+        
