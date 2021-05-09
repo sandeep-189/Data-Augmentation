@@ -30,8 +30,8 @@ def plot_timeseries_2d(data, ncols = 1, grouping = 3, label = None, time_unit = 
     if num_fig % ncols != 0:
         print("Invalid number of columns. Unable to divide the figures.")
         return
-    nrows = num_fig / ncols
-    fig, ax = plt.subplots(nrows = nrows, ncols = ncols, sharex = True, figsize = (5*ncols, 3*nrows))
+    nrows = int(num_fig / ncols)
+    fig, ax = plt.subplots(nrows = int(nrows), ncols = ncols, sharex = True, figsize = (5*ncols, 3*nrows))
     
     # plotting
     for i in range(num_fig):
