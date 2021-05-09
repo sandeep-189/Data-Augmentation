@@ -31,17 +31,22 @@ def plot_timeseries_2d(data, ncols = 1, grouping = 3, label = None, time_unit = 
         print("Invalid number of columns. Unable to divide the figures.")
         return
     nrows = int(num_fig / ncols)
-    fig, ax = plt.subplots(nrows = int(nrows), ncols = ncols, sharex = True, figsize = (5*ncols, 3*nrows))
+    fig, ax = plt.subplots(nrows = int(nrows), ncols = ncols, sharey = True, sharex = True, figsize = (5*ncols, 3*nrows))
     
     # plotting
     for i in range(num_fig):
         for j in range(grouping):
-            ax[i].plot(timelength, data[i*grouping+j])
-        if label is not None:
-            ax[i].set_ylabel(label[i])
+            if ncols == 1:
+                temp = ax[i]
+            else:
+                temp = ax[int(i/nrows)][i%nrows]
+            temp.plot(timelength, data[i*grouping+j])
+            if label is not None:
+                temp.set_ylabel(label[i])
     
-    ax[-1].set_xlabel(xlabel)
-    
+    fig.text(0.5, 0.00, xlabel, ha='center')
+#     ax[-1].set_xlabel(xlabel)
+    plt.tight_layout()
     # save plot
     if save_name is not None:
         plt.savefig(save_name)
@@ -80,7 +85,7 @@ def plot_activity(activity_func, activity_num, model, fake_suffix = None, groupi
     _, _ = plot_timeseries_2d(real_sample, grouping = grouping, label = label, time_unit = time_unit,
                               display = display, save_name = save_name_real, ncols = ncols)
     _, _ = plot_timeseries_2d(syn_data, grouping = grouping, label = label, time_unit = time_unit,
-                              display = display, save_name = save_name_fake)
+                              display = display, save_name = save_name_fake, ncols = ncols)
     
 def plot_realvsfake(datasetname, path_tensorboard_folder, fake_suffix, grouping = 3, label = None,
                     time_unit = 0.01, ncols = 1, display = True):
