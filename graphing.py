@@ -53,7 +53,7 @@ def plot_timeseries_2d(data, ncols = 1, grouping = 3, label = None, time_unit = 
     return fig, ax
 
 def plot_activity(activity_func, activity_num, model, fake_suffix = None, grouping = 3, label = None,
-                  time_unit = 0.01, display = True, save_prefix = None):
+                  time_unit = 0.01, ncols = 1, display = True, save_prefix = None):
     # helper function to plot using function and trained GAN model
     # Use the first output of function as real data
     # Use model to generate one sample of synthetic data
@@ -78,12 +78,12 @@ def plot_activity(activity_func, activity_num, model, fake_suffix = None, groupi
     
     # plotting
     _, _ = plot_timeseries_2d(real_sample, grouping = grouping, label = label, time_unit = time_unit,
-                              display = display, save_name = save_name_real)
+                              display = display, save_name = save_name_real, ncols = ncols)
     _, _ = plot_timeseries_2d(syn_data, grouping = grouping, label = label, time_unit = time_unit,
                               display = display, save_name = save_name_fake)
     
 def plot_realvsfake(datasetname, path_tensorboard_folder, fake_suffix, grouping = 3, label = None,
-                    time_unit = 0.01, display = True):
+                    time_unit = 0.01, ncols = 1, display = True):
     # one line loading function to identify dataset function and load each model for each activity from folder
     # and send it to plot_activity and save the figures
     # datasetname is either PAMAP2 or RWHAR
@@ -95,7 +95,7 @@ def plot_realvsfake(datasetname, path_tensorboard_folder, fake_suffix, grouping 
         
         plot_activity(activityfunc, activity_num, model, fake_suffix = fake_suffix,
                       save_prefix = "./figures/"+datasetname+"_activity_"+str(activity_num), grouping = grouping,
-                      label = label, time_unit = time_unit, display = display)
+                      label = label, time_unit = time_unit, display = display, ncols = ncols)
 
     
 def mean_calc(data):
@@ -118,7 +118,7 @@ def mean_calc(data):
     return mean
 
 def mean_calc_real(dataset = "PAMAP2", sampling_size = 100, grouping = 3, label = None,
-                    time_unit = 0.01, display = True, save = False):
+                    time_unit = 0.01, ncols = 1, display = True, save = False):
     # Calculate mean for real data (only PAMAP2 or RWHAR supported) and plot the mean timeseries
     
     activityfunc, total_activity = helper.get_activityfunc(dataset)
@@ -130,10 +130,10 @@ def mean_calc_real(dataset = "PAMAP2", sampling_size = 100, grouping = 3, label 
         data = random.sample(data, sampling_size)
         mean = mean_calc(data)
         plot_timeseries_2d(mean, grouping = grouping, label = label, time_unit = time_unit,
-                              display = display, save_name = save_name)
+                              display = display, ncols = ncols, save_name = save_name)
         
 def mean_calc_fake(dataset, path_tensorboard_folder, sampling_size = 100, grouping = 3, label = None,
-                    time_unit = 0.01, display = True, save = False, fake_suffix = "LSTM"):
+                    time_unit = 0.01, display = True, save = False, ncols = 1, fake_suffix = "LSTM"):
     # Calculate mean for GAN model and plot it
     
     _, total_activity = helper.get_activityfunc(dataset)
@@ -149,7 +149,7 @@ def mean_calc_fake(dataset, path_tensorboard_folder, sampling_size = 100, groupi
                 save_name = "./figures/"+dataset+"_activity_"+str(activity_num)+"_"+fake_suffix+"_mean.png"
             mean = mean_calc(syn_data)
             plot_timeseries_2d(mean, grouping = grouping, label = label, time_unit = time_unit,
-                              display = display, save_name = save_name)
+                              display = display, save_name = save_name, ncols = 1,)
 
 def plot_confusion_matrix(model, dataloader,  classes = None):
     # Plot the comnfusion matrix given a model and a dataloader for it.
