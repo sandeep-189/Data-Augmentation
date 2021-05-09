@@ -4,7 +4,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
-import helper
+import dataset
 from EncodeLayer import EncodeLayer
 
 class Discriminator(nn.Module):
@@ -18,7 +18,7 @@ class Discriminator(nn.Module):
         self.embedding = nn.Conv1d(self.flat_input_size, self.flat_input_size, 1)
         
         # constant which is added to every timeseries data
-        self.positional_embedding = helper.generate_pe(input_size[-2], input_size[-1], period = period) 
+        self.positional_embedding = dataset.generate_pe(input_size[-2], input_size[-1], period = period) 
         
         self.layer = nn.Sequential(
             *[EncodeLayer(d_model = self.input_size[-1], nhead = nheads, dim_feedforward = dim_feedforward, dropout = 0.4) for _ in range(num_layers)],

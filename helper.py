@@ -212,25 +212,6 @@ def conv1d_ele_size(input_size, kernel, padding, stride, dilation):
     
     return int((input_size + (2*padding) - dilation*(kernel - 1) - 1)/stride + 1)
 
-def generate_pe(channel, length, period = 100, channel_cosine = True):
-    # This function generates a positional embedding needed for transformer to gain awareness of position of input
-    # suited for time series. If channel_cosine is false, instead of sin and cos functions across the row and column  
-    # respectively, we use sin of wavelength period for each channel. we return a addable pe of size channel, length.
-    # The batch dimension will be broadcasted automatically.
-    
-    if not channel_cosine: # pe is a sin function of length repeated across channel
-        pos = torch.arange(0, length, dtype = torch.float32)
-        pe = torch.sin(pos * 2 * np.pi / period)
-        pe = pe.repeat((channel,1))
-        
-    else: # pe is a sum of sin and cos of the position of variable
-        pe = torch.zeros((channel,length), dtype = torch.float32)
-        for i in torch.arange(0, length, dtype = torch.long):
-            for j in torch.arange(0, channel, dtype = torch.long):
-                pe[j,i] = torch.sin(i * 2 * np.pi / period) + torch.cos(j * 2 * np.pi / period)
-    
-    return pe
-
 def get_dataloaders(data_func, batch_size, output_size, val_pc, **kwargs):
     # Function to get the data from data function and load it to a train and validation dataloaders and the weight of the training dataset.
     # batch_size and output_size are used in dataloader options

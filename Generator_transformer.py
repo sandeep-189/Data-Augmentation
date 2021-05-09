@@ -4,7 +4,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
-import helper
+import dataset
 from EncodeLayer import EncodeLayer
 
 class Generator(nn.Module):
@@ -17,7 +17,7 @@ class Generator(nn.Module):
         
         self.embedding = nn.Conv1d(noise_len, noise_len, 1)
         
-        self.positional_embedding = helper.generate_pe(1, noise_len, period = period)
+        self.positional_embedding = dataset.generate_pe(1, noise_len, period = period)
         
         self.layer = nn.Sequential(
             *[EncodeLayer(d_model = noise_len, nhead = nheads, dim_feedforward = dim_feedforward, dropout = 0.5) for _ in range(num_layers)],
