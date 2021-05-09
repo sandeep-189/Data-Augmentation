@@ -207,7 +207,10 @@ def correlation(path_tensorboard_folder, dataset = "PAMAP2", sampling_size = 100
     for key in range(1,total_activity+1):
         y = total_res[key]  
         plt.plot(x, y, label = f"Activity {key}")
-                 
+     
+    ax = plt.gca()
+    ax.set_xlabel(f"Axes of {dataset}")
+    ax.set_ylabel("r")
     plt.legend()
     plt.show()
         
