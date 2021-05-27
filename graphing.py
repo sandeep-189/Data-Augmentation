@@ -156,7 +156,7 @@ def mean_calc_fake(dataset, path_tensorboard_folder, sampling_size = 100, groupi
             plot_timeseries_2d(mean, grouping = grouping, label = label, time_unit = time_unit,
                               display = display, save_name = save_name, ncols = 1,)
 
-def plot_confusion_matrix(model, dataloader,  classes = None):
+def plot_confusion_matrix(model, dataloader,  classes = None, pc = True):
     # Plot the comnfusion matrix given a model and a dataloader for it.
     
     model.eval()
@@ -169,6 +169,8 @@ def plot_confusion_matrix(model, dataloader,  classes = None):
             pred_o = torch.argmax(output, dim=1)
             for (y_true,y_pred) in zip(label,pred_o):
                 cm[y_true.item(),y_pred.item()] += 1
+    if pc:
+        cm = cm / np.sum(cm, axis = 1)[:,np.newaxis]
     disp = ConfusionMatrixDisplay(confusion_matrix = cm, display_labels = classes)
     disp.plot(values_format = '.0f',xticks_rotation = "vertical")
 

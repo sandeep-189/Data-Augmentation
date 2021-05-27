@@ -249,7 +249,7 @@ def load_pl_model(ckpt_path, class_name, remove_prefix ="model.", strict_loading
     # **kwargs is passed to class being initialized/loaded
     
     val_model = class_name(**kwargs)
-    state_dict = torch.load(ckpt_path)["state_dict"]
+    state_dict = torch.load(ckpt_path, map_location="cuda" if torch.cuda.is_available() else "cpu")["state_dict"]
     
     if remove_prefix is not None:
         state_dict = remove_prefix_from_dict(remove_prefix, state_dict)
