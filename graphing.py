@@ -163,8 +163,8 @@ def plot_confusion_matrix(model, dataloader,  classes = None, pc = True):
     cm = np.zeros((len(classes),len(classes))) # rows is actual, cols is predicted
     with torch.no_grad():
         for batch in dataloader:
-            data = batch["data"].to("cuda")
-            label = batch["label"].to("cuda")
+            data = batch["data"].to("cuda" if torch.cuda.is_available() else "cpu")
+            label = batch["label"].to("cuda" if torch.cuda.is_available() else "cpu")
             output = model(data)
             pred_o = torch.argmax(output, dim=1)
             for (y_true,y_pred) in zip(label,pred_o):
@@ -211,7 +211,7 @@ def correlation(path_tensorboard_folder, dataset = "PAMAP2", sampling_size = 100
         plt.plot(x, y, label = f"Activity {key}")
      
     ax = plt.gca()
-    ax.set_xlabel(f"Axes of {dataset}")
+    ax.set_xlabel(f"Sensor channels of {dataset}")
     ax.set_ylabel("r")
     plt.legend()
     plt.show()
