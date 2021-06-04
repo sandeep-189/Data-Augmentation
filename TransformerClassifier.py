@@ -10,7 +10,7 @@ class TransformerClassifier(nn.Module):
     
     def __init__(self, in_channels, output_size, d_model, nhead, period = 100, dim_feedforward=2048, dropout=0.3, num_layers = 3):
         super(TransformerClassifier, self).__init__()
-        self.positional_embedding = dataset.generate_pe(in_channels, d_model, period = period)
+        self.positional_embedding = dataset.generate_pe(in_channels, d_model, period = period, channel_cosine = False)
         self.layers = nn.Sequential(
             *[EncodeLayer(d_model, nhead, dim_feedforward, dropout) for _ in range(num_layers)],
         )
