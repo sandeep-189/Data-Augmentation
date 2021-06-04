@@ -199,9 +199,9 @@ def generate_pe(channel, length, period = 100, channel_cosine = True):
     # The batch dimension will be broadcasted automatically.
     
     if not channel_cosine: # pe is an alternating sin and cos function of length across channel
-        angle_rads = get_angles(np.arange(position)[:, np.newaxis],
-                              np.arange(d_model)[np.newaxis, :],
-                              d_model)
+      angle_rads = get_angles(np.arange(length)[:, np.newaxis],
+                              np.arange(channel)[np.newaxis, :],
+                              channel)
 
         # apply sin to even indices in the array; 2i
         angle_rads[:, 0::2] = np.sin(angle_rads[:, 0::2])
@@ -209,7 +209,7 @@ def generate_pe(channel, length, period = 100, channel_cosine = True):
         # apply cos to odd indices in the array; 2i+1
         angle_rads[:, 1::2] = np.cos(angle_rads[:, 1::2])
 
-        pe = angle_rads[...]
+        pe = torch.from_numpy(angle_rads.reshape(channel,length).astype(np.float32))
         
     else: # pe is a sum of sin and cos of the position of variable
         pe = torch.zeros((channel,length), dtype = torch.float32)
