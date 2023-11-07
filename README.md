@@ -7,11 +7,10 @@ The helper.py file contains all the one line loader functions for the training. 
 
 The helper.py file can be used to train custom validation models as well as custom generator/discriminator models by passing the appropriate model to the train functions as a parameter in the file.
 
-# Requirements
-python >= 3.8 
+# Prerequisites
+To sun the code , install the python 3.8 environment using anaconda or miniconda. Using the conda environment, run "pip install -r requirements.txt" to install the needed python library versions.
 
-pytorch >= 1.7 
+The datasets are publicly available and will have to be downloaded from the official sites [PAMAP2](https://archive.ics.uci.edu/dataset/231/pamap2+physical+activity+monitoring) [RWHAR](https://www.uni-mannheim.de/dws/research/projects/activity-recognition/dataset/dataset-realworld/) into a ./Data/{dataset_name} directory.
 
-pytorch-lightning >= 1.2.1 
-
-tensorboard >= 2.2 
+# Training
+You can run the Validation_model_training.ipynb to train the model.
