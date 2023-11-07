@@ -13,4 +13,4 @@ To sun the code , install the python 3.8 environment using anaconda or miniconda
 The datasets are publicly available and will have to be downloaded from the official sites [PAMAP2](https://archive.ics.uci.edu/dataset/231/pamap2+physical+activity+monitoring) [RWHAR](https://www.uni-mannheim.de/dws/research/projects/activity-recognition/dataset/dataset-realworld/) into a ./Data/{dataset_name} directory.
 
 # Training
-You can run the Validation_model_training.ipynb to train the model.
+You can run the GAN_training.ipynb to train the model.
